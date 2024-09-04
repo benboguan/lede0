@@ -1038,7 +1038,7 @@ define Device/jcg_y2
   JCG_MAXSIZE := 16064k
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Y2
-  DEVICE_PACKAGES := kmod-mt7615d_dbdc kmod-usb3 -luci-newapi -wpad-openssl
+  DEVICE_PACKAGES := kmod-mt7615d_dbdc kmod-usb3 luci-oldapi -wpad-openssl
 endef
 TARGET_DEVICES += jcg_y2
 
@@ -1476,8 +1476,8 @@ define Device/raisecom_msg1500-x-00
   DEVICE_VARIANT := X.00
   DEVICE_ALT0_VENDOR := Nokia
   DEVICE_ALT0_MODEL := A-040W-Q
-  DEVICE_PACKAGES := -luci-newapi kmod-mt7615d_dbdc kmod-usb3 \
-	kmod-usb-ledtrig-usbport wireless-tools
+  DEVICE_PACKAGES := kmod-mt7615d_dbdc kmod-usb3 luci-oldapi \
+	kmod-usb-ledtrig-usbport wireless-tools uboot-envtools
 endef
 TARGET_DEVICES += raisecom_msg1500-x-00
 
