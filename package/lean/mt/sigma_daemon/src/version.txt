@@ -1,0 +1,54 @@
+mtk_dut version:
+Version: 2.3.2
+Date: 7/30/2020
+Description: Fix a bunch of MBSS realted bug
+Fix Daemon can't be autostart after MBSS test case. 
+Fix MBO-APUT Unsolicited BTM Request missing problem
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+mtk_dut version:
+Version: 2.3.0
+Date: 7/30/2020
+Description: Fix a bunch of MBSS realted bug
+Add Daemon autostart script file and feature for 6G build in SDK. 
+The autostart patch is in inside openwrt/lede project.
+Autostart script mtk_dut in under /lede/package/mtk/applications/sigma_daemon/files
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+mtk_dut version:
+Version: 2.2.0
+Date: 7/30/2020
+Description: WIFI 6E program needs a bunch of different profile key setting than normal 
+cert profile. 2 different testbed cert profile were created:wifi_cert_tb.1.
+dat and wifi_cert_tb.2.dat
+
+This patch add the support to check the device type from CAPI and then load 
+DUT or TESTBED cert profile accordingly.
+
+If no TESTBED cert profile is found, Daemon will fall back to the old way to 
+set several specific testbed keys to the unified profile. So it is backward 
+compatible.
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+Version: 2.1.0
+Date: 7/22/2020
+Description: Replace the mechanism that configure 6G interface with command option "-p 6G".
+Instead, the original default interface are always preconfigured to 2G/5G for single card; ra0 for 2G, rai0 for 5G for dual card.
+When Daemon receive CAPI that configure interface to 6G, for example
+"ap_set_wireless,NAME,ap1he,program,HE,CHANNEL,53,ChnlFreq,6215,SSID,Wi-Fi_6E_240,MODE,11ax!",
+Daemon start to change 5G interface rai0 to ra0, let it share with 2G interface, then configure rai0 to 6G interface.
+When a new test case starts, in the process fucntion of CAPI 
+"ap_reset_default,..."
+the original ra0/rai0 interface will be mapped back to 2G/5G interface, and 
+then 6G interface will be disable. All interface parameters are restored. By this way, Daemon can mix up 6G test case 
+with non 6G test case when running test without restarting Daemon.
+
+Patch: http://gerrit.mediatek.inc:8080/#/c/neptune/wlan_tool/wfa_cert/sigma_daemon/+/
+
+Version: 2.0.0
+Date: 6/26/2020
+Description: Create version component
+Patch: http://gerrit.mediatek.inc:8080/#/c/neptune/wlan_tool/wfa_cert/sigma_daemon/+/3483742
