@@ -6676,7 +6676,6 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 				pAd->ApCfg.ApCliTab[pObj->ioctl_if].wdev.SecConfig.AKMMap);
 		}
 #endif /* APCLI_SUPPORT */
-
 #ifdef WDS_SUPPORT
 		else if (pObj->ioctl_if_type == INT_WDS) {
 			AuthMode = SecAuthModeNewToOld(

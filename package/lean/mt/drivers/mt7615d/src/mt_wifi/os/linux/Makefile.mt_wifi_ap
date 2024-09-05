@@ -4,7 +4,7 @@ else
 ifeq ($(CONFIG_DEFAULTS_KERNEL_4_4),y)
 WIFI_DRV_PATH = drivers/net/wireless/mediatek
 else
-WIFI_DRV_PATH = drivers/net/wireless/mtk/mt7615e
+WIFI_DRV_PATH = drivers/net/wireless
 endif
 endif
 
@@ -31,6 +31,16 @@ endif
 endif
 
 SRC_DIR = ../mt_wifi
+
+ifneq ($(CONFIG_GCC_VERSION), )
+ifeq ($(shell expr $(CONFIG_GCC_VERSION) \>= 8.4.0), 1)
+# this option only have after 8.x.x
+# workaround of bin compare on preflight will get the .rodata.str1.8 and it's abs path of __FILE__
+# will false the compare due to build server folder is not the same
+ccflags-y += -fmacro-prefix-map=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))=
+endif
+endif
+
 SRC_EMBEDDED_DIR = ../mt_wifi/embedded
 ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
 EXTRA_CFLAGS += -DCONFIG_SUPPORT_OPENWRT
@@ -116,7 +126,7 @@ endif
 endif
 
 #support built-in/ko for Openwrt/Linux SDK
-obj-$(CONFIG_MT_AP_SUPPORT) += $(DRV_NAME).o
+obj-m += $(DRV_NAME).o
 
 ifeq ($(CONFIG_MTK_EMI_7622),y)
 EXTRA_CFLAGS += -DCONFIG_ARCH_MT7622
@@ -500,7 +510,7 @@ endif
 
 #SNIFFER
 ifeq ($(CONFIG_SNIFFER_SUPPORT),y)
-    EXTRA_CFLAGS += -DSNIFFER_SUPPORT
+    EXTRA_CFLAGS += -DCONFIG_SNIFFER_SUPPORT
 
     spec_objs += $(SRC_EMBEDDED_DIR)/common/sniffer_radiotap.o\
                  $(SRC_EMBEDDED_DIR)/common/sniffer_prism.o
@@ -908,7 +918,8 @@ endif
 os_objs := $(SRC_DIR)/os/linux/rt_proc.o\
             $(SRC_DIR)/os/linux/rt_linux.o\
             $(SRC_DIR)/os/linux/rt_profile.o\
-            $(SRC_DIR)/os/linux/rt_main_dev.o
+            $(SRC_DIR)/os/linux/rt_main_dev.o\
+            $(SRC_DIR)/os/linux/mt_wifi_mtd.o
 
 ifeq ($(CONFIG_WLAN_HOOK),y)
 	EXTRA_CFLAGS +=-DRTMP_WLAN_HOOK_SUPPORT
@@ -1036,6 +1047,7 @@ EXTRA_CFLAGS += -DUNIFY_FW_CMD
 EXTRA_CFLAGS += -DNEED_ROM_PATCH
 EXTRA_CFLAGS += -DTXPWRMANUAL
 EXTRA_CFLAGS += -DMAC_INIT_OFFLOAD
+EXTRA_CFLAGS += -DMT_DMAC
 EXTRA_CFLAGS += -DENHANCED_STAT_DISPLAY
 EXTRA_CFLAGS += -DCONFIG_FWOWN_SUPPORT
 EXTRA_CFLAGS += -DNEWSEC
@@ -1467,10 +1479,10 @@ endif
 ifeq ($(CONFIG_FAST_NAT_SUPPORT),y)
 ifeq ($(CONFIG_WLAN_HOOK),y)
 ifeq ($(CONFIG_WHNAT_SUPPORT),y)
-EXTRA_CFLAGS += -DWHNAT_SUPPORT
+EXTRA_CFLAGS += -DWHNAT_SUPPORT -DCONFIG_ARCH_MT7622_WIFI_HW_NAT
 else
 ifeq ($(CONFIG_WHNAT_SUPPORT),m)
-EXTRA_CFLAGS += -DWHNAT_SUPPORT
+EXTRA_CFLAGS += -DWHNAT_SUPPORT -DCONFIG_ARCH_MT7622_WIFI_HW_NAT
 endif
 endif
 endif

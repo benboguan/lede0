@@ -217,12 +217,12 @@ config MTK_BRCM_256QAM_SUPPORT
 	bool "BRCM 2.4G 256QAM support"
 	depends on MTK_WIFI_DRIVER
 	depends on MTK_G_BAND_256QAM_SUPPORT
-	default y
+	default n
 
 config MTK_VHT_TXBF_2G_EPIGRAM_IE_SUPPORT
-    bool "BRCM 2.4G VHT Sounding support"
+	bool "BRCM 2.4G VHT Sounding support"
 	depends on MTK_WIFI_DRIVER
-	default y
+	default n
 
 config MTK_TPC_SUPPORT
 	bool "802.11h TPC Support"
@@ -713,6 +713,12 @@ config MTK_APCLI_CERT_SUPPORT
 	depends on MTK_MT_AP_SUPPORT
 	depends on MTK_APCLI_SUPPORT
         default n
+
+config MTK_APSTA_MIXED_SUPPORT 
+	bool "AP-Sta Mixed Support"
+	depends on MTK_MT_AP_SUPPORT
+	depends on MTK_APCLI_SUPPORT
+        default y
 
 config MTK_MAC_REPEATER_SUPPORT
 	bool "MAC Repeater Support"

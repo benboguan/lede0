@@ -12,7 +12,7 @@ PKG_VERSION:=5.1.0.0
 
 PKG_BUILD_PARALLEL:=1
 
-# PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 PKG_KCONFIG:= \
 	SUPPORT_OPENWRT \
 	WIFI_DRIVER \
@@ -184,11 +184,11 @@ PKG_KCONFIG:= \
 	CHIP_MT7663E \
 	CHIP_MT7626 \
 
-PKG_CONFIG_DEPENDS:=$(foreach c, $(PKG_KCONFIG), CONFIG_MTK_$(c) )
+PKG_CONFIG_DEPENDS:=$(foreach c, $(PKG_KCONFIG),$(if $(CONFIG_MTK_$c),CONFIG_$(c)))
 
 include $(INCLUDE_DIR)/package.mk
 
-# TAR_CMD=$(HOST_TAR) -C $(1)/ $(TAR_OPTIONS)
+TAR_CMD=$(HOST_TAR) -C $(1)/ $(TAR_OPTIONS)
 
 define KernelPackage/mt7615d
   CATEGORY:=Kernel modules
@@ -241,8 +241,9 @@ define Build/Compile
 		$(KERNEL_MAKE_FLAGS) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		$(foreach c, $(PKG_KCONFIG),$(if $(CONFIG_MTK_$c),CONFIG_$(c)=$(CONFIG_MTK_$(c)))) \
 		M="$(PKG_BUILD_DIR)/mt_wifi_ap" \
+		LINUX_DIR="$(KERNEL_BUILD_DIR)" \
+		$(foreach c, $(PKG_KCONFIG),$(if $(CONFIG_MTK_$c),CONFIG_$(c)=$(CONFIG_MTK_$(c)))) \
 		$(if $(CONFIG_MTK_CFG80211_SUPPORT),NOSTDINC_FLAGS="$(NOSTDINC_FLAGS)") \
 		V=1 \
 		modules

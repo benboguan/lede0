@@ -2646,7 +2646,9 @@ struct cfg80211_ops CFG80211_Ops = {
 	/* configure connection quality monitor RSSI threshold */
 	.set_cqm_rssi_config = NULL,
 
+	/* CPTCFG_BACKPORTED_CFG80211_MODULE */
 	.update_mgmt_frame_registrations = CFG80211_OpsUpdateMgmtFrameRegistrations,
+
 	/* notify driver that a management frame type was registered */
 	.mgmt_frame_register = CFG80211_OpsMgmtFrameRegister,
 
