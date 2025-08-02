@@ -11109,6 +11109,7 @@ static INT show_apcfg_info(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	UCHAR wmode;
 	POS_COOKIE pObj = NULL;
 	CHAR str[10] = "";
+  	UCHAR BandIdx;
 
 	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
 		 ("show ap cfg info:\n"));
@@ -11151,7 +11152,8 @@ static INT show_apcfg_info(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			  apcfg_for_peak.cfg_mode[0],
 			  apcfg_for_peak.cfg_mode[1]));
 
-	apcfg_para_setting.tx_power_percentage = 0;
+	BandIdx = HcGetBandByWdev(wdev);
+  	apcfg_para_setting.tx_power_percentage = pAd->CommonCfg.ucTxPowerPercentage[BandIdx];
 	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
 		 ("%-24s%-16lu%lu\n", "TxPower",
 		  apcfg_para_setting.tx_power_percentage,

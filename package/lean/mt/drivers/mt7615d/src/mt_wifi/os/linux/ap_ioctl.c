@@ -169,7 +169,11 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	pIoctlConfig->net_dev = net_dev;
 	pIoctlConfig->wdev = RTMP_OS_NETDEV_GET_WDEV(net_dev);
 	pIoctlConfig->priv_flags = RT_DEV_PRIV_FLAGS_GET(net_dev);
+	if (wrqin->u.data.length)
 	pIoctlConfig->pCmdData = wrqin->u.data.pointer;
+	else
+		pIoctlConfig->pCmdData = NULL;
+	pIoctlConfig->cmd_data_len = wrqin->u.data.length;
 	pIoctlConfig->CmdId_RTPRIV_IOCTL_SET = RTPRIV_IOCTL_SET;
 	pIoctlConfig->name = net_dev->name;
 	pIoctlConfig->apidx = 0;
@@ -280,6 +284,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 		struct iw_point *erq = &wrqin->u.essid;
 		PCHAR pSsidStr = NULL;
 
+		os_zero_mem(pIoctlSSID, sizeof(*pIoctlSSID));
 		erq->flags = 1;
 		/*erq->length = pAd->ApCfg.MBSSID[pObj->ioctl_if].SsidLen; */
 		pIoctlSSID->priv_flags = RT_DEV_PRIV_FLAGS_GET(net_dev);
@@ -356,6 +361,8 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	case SIOCGIWMODE: /*get operation mode */
 		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 			wrqin->u.mode = IW_MODE_INFRA; /* ApCli Mode. */
+		else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS)
+			wrqin->u.mode = IW_MODE_REPEAT;		/* Wds Mode. */
 		else
 			wrqin->u.mode = IW_MODE_MASTER; /* AP Mode. */
 		break;
