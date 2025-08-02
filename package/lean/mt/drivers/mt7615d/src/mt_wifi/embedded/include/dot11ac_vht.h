@@ -45,6 +45,8 @@
 #define BW_SIGNALING_DISABLE 0
 #define BW_SIGNALING_STATIC 1
 #define BW_SIGNALING_DYNAMIC 2
+#define GET_BW160_PRIM80_CENT(prim, cent)\
+	((prim > cent) ? (cent + 8) : (cent - 8))
 
 /*
 	IEEE 802.11AC D3.0 sec 8.4.1.50

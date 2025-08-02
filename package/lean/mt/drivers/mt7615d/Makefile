@@ -79,6 +79,7 @@ PKG_KCONFIG:= \
 	RF_LOCKDOWN_SUPPORT \
 	LINK_TEST_SUPPORT \
 	ATE_SUPPORT \
+	CUSTOMER_DCC_FEATURE \
 	PASSPOINT_R2 \
 	UAPSD \
 	TCP_RACK_SUPPORT \
@@ -272,7 +273,7 @@ define KernelPackage/mt7615d_dbdc/install
 	$(INSTALL_DIR) $(1)/lib/firmware/iPAiLNA
 	$(INSTALL_DIR) $(1)/lib/firmware/ePAeLNA
 	$(INSTALL_BIN) ./src/bin/mt7615/iPAiLNA/MT7615_EEPROM1.bin $(1)/lib/firmware/iPAiLNA
-	$(INSTALL_BIN) ./src/bin/mt7615/ePAeLNA/MT7615_EEPROM1.bin $(1)/etc_ro/wlan
+	$(INSTALL_BIN) ./src/bin/mt7615/MT7615E_EEPROM1.bin $(1)/etc_ro/wlan
 	$(INSTALL_BIN) ./src/bin/mt7615/WIFI_RAM_CODE_MT7615.bin $(1)/lib/firmware
 	$(INSTALL_BIN) ./src/bin/mt7615/WIFI_RAM_CODE_MT7615_E1.bin $(1)/lib/firmware
 	$(INSTALL_BIN) ./src/bin/mt7615/WIFI_RAM_CODE_MT7615_plain.bin $(1)/lib/firmware

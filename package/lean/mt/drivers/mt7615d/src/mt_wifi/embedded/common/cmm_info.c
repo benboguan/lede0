@@ -33,24 +33,21 @@
 #define MCAST_WCID_TO_REMOVE 0 /* Pat: TODO */
 
 INT MCSMappingRateTable[] = {
-	2, 4, 11, 22, 12, 18, 24, 36, 48, 72, 96, 108, 109, 110, 111,
-	112, /* CCK and OFDM */
-	13, 26, 39, 52, 78, 104, 117, 130, 26, 52, 78, 104, 156, 208, 234, 260,
+	2,  4, 11, 22, 12,  18,  24,  36, 48,  72,  96, 108, 109, 110, 111, 112,/* CCK and OFDM */
+	13, 26, 39, 52, 78, 104, 117, 130, 26,  52,  78, 104, 156, 208, 234, 260,
 	39, 78, 117, 156, 234, 312, 351, 390, /* BW 20, 800ns GI, MCS 0~23 */
-	27, 54, 81, 108, 162, 216, 243, 270, 54, 108, 162, 216, 324, 432, 486,
-	540, 81, 162, 243, 324, 486, 648, 729,
-	810, /* BW 40, 800ns GI, MCS 0~23 */
-	14, 29, 43, 57, 87, 115, 130, 144, 29, 59, 87, 115, 173, 230, 260, 288,
+	27, 54, 81, 108, 162, 216, 243, 270, 54, 108, 162, 216, 324, 432, 486, 540,
+	81, 162, 243, 324, 486, 648, 729, 810, /* BW 40, 800ns GI, MCS 0~23 */
+	14, 29, 43, 57, 87, 115, 130, 144, 29, 59,   87, 115, 173, 230, 260, 288,
 	43, 87, 130, 173, 260, 317, 390, 433, /* BW 20, 400ns GI, MCS 0~23 */
-	30, 60, 90, 120, 180, 240, 270, 300, 60, 120, 180, 240, 360, 480, 540,
-	600, 90, 180, 270, 360, 540, 720, 810,
-	900, /* BW 40, 400ns GI, MCS 0~23 */
+	30, 60, 90, 120, 180, 240, 270, 300, 60, 120, 180, 240, 360, 480, 540, 600,
+	90, 180, 270, 360, 540, 720, 810, 900, /* BW 40, 400ns GI, MCS 0~23 */
 
 	/*for 11ac:20 Mhz 800ns GI*/
-	6, 13, 19, 26, 39, 52, 58, 65, 78, 0, /*1ss mcs 0~8*/
-	13, 26, 39, 52, 78, 104, 117, 130, 156, 0, /*2ss mcs 0~8*/
-	19, 39, 58, 78, 117, 156, 175, 195, 234, 260, /*3ss mcs 0~9*/
-	26, 52, 78, 104, 156, 208, 234, 260, 312, 0, /*4ss mcs 0~8*/
+	6,  13, 19, 26,  39,  52,  58,  65,  78,  90,     /*1ss mcs 0~8*/
+	13, 26, 39, 52,  78,  104, 117, 130, 156, 180,     /*2ss mcs 0~8*/
+	19, 39, 58, 78,  117, 156, 175, 195, 234, 260,   /*3ss mcs 0~9*/
+	26, 52, 78, 104, 156, 208, 234, 260, 312, 360,     /*4ss mcs 0~8*/
 
 	/*for 11ac:40 Mhz 800ns GI*/
 	13, 27, 40, 54, 81, 108, 121, 135, 162, 180, /*1ss mcs 0~9*/
@@ -71,10 +68,10 @@ INT MCSMappingRateTable[] = {
 	234, 468, 702, 936, 1404, 1872, 2106, 2340, 2808, 3120, /*4ss mcs 0~9*/
 
 	/*for 11ac:20 Mhz 400ns GI*/
-	7, 14, 21, 28, 43, 57, 65, 72, 86, 0, /*1ss mcs 0~8*/
-	14, 28, 43, 57, 86, 115, 130, 144, 173, 0, /*2ss mcs 0~8*/
-	21, 43, 65, 86, 130, 173, 195, 216, 260, 288, /*3ss mcs 0~9*/
-	28, 57, 86, 115, 173, 231, 260, 288, 346, 0, /*4ss mcs 0~8*/
+	7,	14,	21,	28,  43,  57,   65,	 72,  86,  100,    /*1ss mcs 0~8*/
+	14,	28,	43,	57,	 86,  115,  130, 144, 173, 200,    /*2ss mcs 0~8*/
+	21,	43,	65,	86,	 130, 173,  195, 216, 260, 288,  /*3ss mcs 0~9*/
+	28,	57,	86,	115, 173, 231,  260, 288, 346, 400,    /*4ss mcs 0~8*/
 
 	/*for 11ac:40 Mhz 400ns GI*/
 	15, 30, 45, 60, 90, 120, 135, 150, 180, 200, /*1ss mcs 0~9*/
@@ -5304,8 +5301,8 @@ RTMP_STRING *GetAuthMode(CHAR auth)
     ==========================================================================
 */
 #define LINE_LEN                                                               \
-	(4 + 33 + 20 + 23 + 8 + 9 + 7 + 7 +                                        \
-	 3) /* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
+	(4 + 33 + 20 + 23 + 5 + 9 + 7 + 7 +                                        \
+	 3) /* Channel+SSID+Bssid+Security+Rssi+Signal+WiressMode+ExtCh+NetworkType*/
 
 #ifdef WSC_INCLUDED
 #define WPS_LINE_LEN (4 + 5) /* WPS+DPID*/
@@ -5412,6 +5409,8 @@ VOID RTMPCommSiteSurveyData(IN RTMP_STRING *msg, IN BSS_ENTRY *pBss,
 		Rssi_Quality = (UINT)(((Rssi + 90) * 26) / 10);
 	else /* < -84 dbm*/
 		Rssi_Quality = 0;
+
+	sprintf(msg + strlen(msg), "%-5d", Rssi + 0x100);
 
 	sprintf(msg + strlen(msg), "%-9d", Rssi_Quality);
 	/* Wireless Mode*/
@@ -5871,7 +5870,7 @@ VOID RTMPIoctlGetSiteSurvey(IN PRTMP_ADAPTER pAdapter,
 //		"SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH",
 //		" NT", " SSID_Len");
 	sprintf(msg + strlen(msg),
-		"%-4s%-4s%-33s%-20s%-23s%-8s%-9s%-7s%-7s%-3s%-8s\n", "No", "Ch",
+		"%-4s%-4s%-33s%-20s%-23s%-5s%-9s%-7s%-7s%-3s%-8s\n", "No", "Ch",
 		"SSID", "BSSID", "Security", "Rssi", "Signal(%)", "W-Mode", " ExtCH",
 		" NT", " SSID_Len");
 #ifdef WSC_INCLUDED
@@ -6219,8 +6218,17 @@ VOID RTMPIoctlGetMacTableStaInfo(IN PRTMP_ADAPTER pAd,
 			pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi[1];
 			pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi[2];
 			pDst->AvgRssi3 = pEntry->RssiSample.AvgRssi[3];
+#ifdef CUSTOMER_DCC_FEATURE
+			/*FILL the AVG SNR */
+			pDst->AvgSnr = ((pEntry->RssiSample.AvgSnr[0] +
+					 pEntry->RssiSample.AvgSnr[1] +
+					 pEntry->RssiSample.AvgSnr[2] +
+					 pEntry->RssiSample.AvgSnr[3]) /
+					pAd->Antenna.field.RxPath);
+#endif /* CUSTOMER_DCC_FEATURE */
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
+			pDst->InactiveTime = (UINT32)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount);
 			pDst->TxRate.word = RTMPGetLastTxRate(pAd, pEntry);
 			pDst->LastRxRate = pEntry->LastRxRate;
 			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;

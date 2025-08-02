@@ -8570,6 +8570,66 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 				      wrq->u.data.length);
 		break;
 	}
+	case OID_802_11_GET_CENTRAL_CHAN1:
+	{
+		struct wifi_dev *wdev = get_wdev_by_ioctl_idx_and_iftype(pAd, pObj->ioctl_if, pObj->ioctl_if_type);
+		UCHAR ext_cha = wlan_operate_get_ext_cha(wdev);
+		UCHAR bw = wlan_operate_get_bw(wdev);
+		UINT8 prim_ch = wdev->channel;
+		UINT8 cent_ch_1 = wlan_operate_get_cen_ch_1(wdev);
+		UINT8 CenCh1 = 0;
+
+		switch (bw) {
+		case BW_20:
+			CenCh1 = prim_ch;
+			break;
+		case BW_40:
+			if ((prim_ch > 2) && (ext_cha == EXTCHA_BELOW)) {
+				if (prim_ch == 14)
+					CenCh1 = prim_ch - 1;
+				else
+					CenCh1 = prim_ch - 2;
+			}
+			else if (ext_cha == EXTCHA_ABOVE)
+				CenCh1 = prim_ch + 2;
+			break;
+		case BW_80:
+		case BW_8080:
+			CenCh1 = cent_ch_1;
+			break;
+		case BW_160:
+			CenCh1 = GET_BW160_PRIM80_CENT(prim_ch, cent_ch_1);
+			break;
+		default:
+			CenCh1 = cent_ch_1;
+			break;
+		}
+
+		wrq->u.data.length = sizeof(CenCh1);
+		Status = copy_to_user(wrq->u.data.pointer, &CenCh1, wrq->u.data.length);
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				 ("Query::OID_802_11_GET_CENTRAL_CHAN1 CentralCh1 = %d\n", CenCh1));
+		break;
+	}
+	case OID_802_11_GET_CENTRAL_CHAN2:
+	{
+		struct wifi_dev *wdev = get_wdev_by_ioctl_idx_and_iftype(pAd, pObj->ioctl_if, pObj->ioctl_if_type);
+		UCHAR bw = wlan_operate_get_bw(wdev);
+		UINT8 cent_ch_1 = wlan_operate_get_cen_ch_1(wdev);
+		UINT8 cent_ch_2 = wlan_operate_get_cen_ch_2(wdev);
+		UINT8 CenCh2 = 0;
+
+		if (bw == BW_160)
+			CenCh2 = cent_ch_1;
+		else
+			CenCh2 = cent_ch_2;
+
+		wrq->u.data.length = sizeof(CenCh2);
+		Status = copy_to_user(wrq->u.data.pointer, &CenCh2, wrq->u.data.length);
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				 ("Query::OID_802_11_GET_CENTRAL_CHAN2 CentralCh2 = %d\n", CenCh2));
+		break;
+	}
 	case OID_GET_CHAN_LIST: {
 		int i = 0;
 		UCHAR BandIdx = 0;
