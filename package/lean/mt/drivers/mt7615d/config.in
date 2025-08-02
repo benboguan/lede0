@@ -475,6 +475,11 @@ config MTK_ATE_SUPPORT
 	depends on MTK_WIFI_DRIVER
 	default y
 
+config MTK_CUSTOMER_DCC_FEATURE
+	bool "CUSTOMER_DCC_FEATURE Support"
+	depends on MTK_WIFI_DRIVER
+	default y
+
 #config MTK_MEMORY_OPTIMIZATION
 #	bool "Memory Optimization"
 #	depends on MTK_WIFI_DRIVER
