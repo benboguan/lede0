@@ -445,7 +445,8 @@ struct hostapd_wpa_psk {
 
 #define RT_OID_802_11_QUERY_TDLS_PARAM 0x0676
 #define RT_OID_802_11_QUERY_TDLS 0x0677
-
+#define OID_802_11_GET_CENTRAL_CHAN1					0x0978
+#define OID_802_11_GET_CENTRAL_CHAN2					0x0979
 /* Ralink defined OIDs */
 /* Dennis Lee move to platform specific */
 
