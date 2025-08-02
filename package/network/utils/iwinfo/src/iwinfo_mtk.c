@@ -121,6 +121,36 @@ int is_5g(const char *ifname)
 	return 0;
 }
 
+static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
+{
+	FILE *fp;
+	char *key, *val, buf[512];
+
+	fp = fopen(MTK_L1_PROFILE_PATH, "r");
+	if (!fp)
+		return -1;
+
+	while (fgets(buf, sizeof(buf), fp))
+	{
+		key = strtok(buf, " =\n");
+		val = strtok(NULL, "\n");
+		
+		if (!key || !val || !*key || *key == '#')
+			continue;
+
+		if (!strcmp(key, attr))
+		{
+			//printf("l1profile key=%s, val=%s\n", key, val);
+			snprintf(data, len, "%s", val);
+			fclose(fp);
+			return 0;
+		}
+	}
+
+	fclose(fp);
+	return -1;
+}
+
 static int mtk_ioctl(const char *ifname, int cmd, struct iwreq *wrq)
 {
 	if (!strncmp(ifname, "mon.", 4))
