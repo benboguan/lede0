@@ -37,7 +37,7 @@ define Package/libiwinfo
 endef
 
 define Package/libiwinfo/description
-  Wireless information library with simplified API for nl80211
+  Wireless information library with simplified API for nl80211, mtk
   and wext driver interfaces.
 endef
 

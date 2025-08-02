@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/api/mtk.h
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,279 @@
 +#ifndef _MTK_H
 +#define _MTK_H
 +
@@ -84,8 +84,8 @@
 +#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT	(SIOCIWFIRSTPRIV + 0x1F)
 +#define RTPRIV_IOCTL_STATIC_WEP_COPY		(SIOCIWFIRSTPRIV + 0x10)
 +#define RTPRIV_IOCTL_WSC_PROFILE			(SIOCIWFIRSTPRIV + 0x12)
-+#define	RTPRIV_IOCTL_GSTAINFO				(SIOCIWFIRSTPRIV + 0x1A)
-+#define	RTPRIV_IOCTL_GSTAT					(SIOCIWFIRSTPRIV + 0x1B)
++#define RTPRIV_IOCTL_GSTAINFO				(SIOCIWFIRSTPRIV + 0x1A)
++#define RTPRIV_IOCTL_GSTAT					(SIOCIWFIRSTPRIV + 0x1B)
 +#define RTPRIV_IOCTL_GRSSI					(SIOCIWFIRSTPRIV + 0x1C)
 +#define RTPRIV_IOCTL_GTXBFCALP				(SIOCIWFIRSTPRIV + 0x1D)
 +
@@ -98,8 +98,8 @@
 +#define OID_802_11_SECURITY_TYPE                0x093e
 +#define GET_MAC_TABLE_STRUCT_FLAG_RAW_SSID	0x1
 +
-+#define OID_802_11_NETWORK_TYPES_SUPPORTED          0x0103
-+#define OID_802_11_NETWORK_TYPE_IN_USE		   0x0104
++#define OID_802_11_GET_CENTRAL_CHAN1					0x0978
++#define OID_802_11_GET_CENTRAL_CHAN2					0x0979
 +#define OID_802_11_RSSI_TRIGGER		          0x0107
 +#define RT_OID_802_11_RSSI							0x0108 //rt2860 only , kathy
 +#define RT_OID_802_11_RSSI_1						0x0109 //rt2860 only , kathy
@@ -258,6 +258,8 @@
 +	unsigned int		ConnectedTime;
 +	HTTRANSMIT_SETTING	TxRate;
 +	unsigned int		LastRxRate;
++	unsigned int		InactiveTime;
++	unsigned int		AvgSnr;
 +	short			StreamSnr[3];
 +	short			SoundingRespSnr[3];
 +	unsigned long		TxPackets;
@@ -273,6 +275,7 @@
 +	RT_802_11_MAC_ENTRY	Entry[MAX_NUMBER_OF_MAC];
 +} RT_802_11_MAC_TABLE, *PRT_802_11_MAC_TABLE;
 +
++#define MTK_L1_PROFILE_PATH		"/etc/wireless/l1profile.dat"
 +void getRate(HTTRANSMIT_SETTING HTSetting, unsigned long *fLastTxRxRate);
 +unsigned int cck_to_mcs(unsigned int mcs);
 +
@@ -419,7 +422,21 @@
  	luaL_register(L, NULL, R_common);
 --- a/iwinfo_wext.c
 +++ b/iwinfo_wext.c
-@@ -197,7 +197,7 @@ static int wext_get_center_chan2(const c
+@@ -185,19 +185,19 @@ static int wext_get_channel(const
+ 	return -1;
+ }
+ 
+-static int wext_get_center_chan1(const char *ifname, int *buf)
++int wext_get_center_chan1(const char *ifname, int *buf)
+ {
+ 	/* Not Supported */
+ 	return -1;
+ }
+ 
+-static int wext_get_center_chan2(const char *ifname, int *buf)
++int wext_get_center_chan2(const char *ifname, int *buf)
+ {
+ 	/* Not Supported */
  	return -1;
  }
  
@@ -466,25 +483,62 @@
  	struct iwinfo_freqlist_entry *e = NULL;
 --- a/iwinfo_utils.c
 +++ b/iwinfo_utils.c
-@@ -336,7 +336,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+@@ -324,6 +324,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+ {
+ 	FILE *mtd;
+ 	uint16_t *bc;
++	uint16_t ident;
+ 
+ 	int fd, off;
+ 	unsigned int len;
+@@ -336,7 +337,7 @@ int iwinfo_hardware_id_from_mtd(struct i
  	{
  		if (fscanf(mtd, "mtd%d: %x %*x %127s", &off, &len, buf) < 3 ||
  		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"") &&
 -		     strcmp(buf, "\"factory\"")))
-+		     strcmp(buf, "\"Factory\"")))
++		     strcmp(buf, "\"factory\"") && strcmp(buf, "\"Factory\"")))
  		{
  			off = -1;
  			continue;
-@@ -407,7 +407,8 @@ int iwinfo_hardware_id_from_mtd(struct i
+@@ -355,6 +356,38 @@ int iwinfo_hardware_id_from_mtd(struct i
+ 	if ((fd = open(buf, O_RDONLY)) < 0)
+ 		return -1;
  
- 				/* subsystem from EEPROM_NIC_CONF0_RF_TYPE */
- 				id->subsystem_device_id = (bc[off + 0x1a] & 0x0f00) >> 8;
--			} else if ((bc[off] == 0x7620) || (bc[off] == 0x2076) ||
-+			} else if ((bc[off] == 0x7615) || (bc[off] == 0x1576) ||
-+			           (bc[off] == 0x7620) || (bc[off] == 0x2076) ||
- 			           (bc[off] == 0x7628) || (bc[off] == 0x2876) ||
- 			           (bc[off] == 0x7688) || (bc[off] == 0x8876)) {
- 				/* vendor: MediaTek */
++	if (read(fd, &ident, sizeof(ident)) != -1)
++	{
++		if (ident == 0x7615 || ident == 0x7915
++			|| ident == 0x1576 || ident == 0x1579)
++		{
++			uint16_t ident_zone2 = 0;
++			if (len > 0xa0002 && 
++				lseek(fd, 0xa0000, SEEK_SET) != -1 &&
++				read(fd, &ident_zone2, sizeof(ident_zone2)) != -1)
++			{
++				if (ident_zone2 != 0xFFFF && ident_zone2 != 0x0) {
++					close(fd);
++					return -1;
++				}
++			}
++			if ((ident & 0xff) == 0x79 || (ident & 0xff) == 0x76)
++				id->device_id = (ident >> 8) | (ident & 0x00ff) << 8;
++			else
++				id->device_id = ident;
++			id->vendor_id = 0x14c3;
++			id->subsystem_vendor_id = 0x14c3;
++			id->subsystem_device_id = id->device_id;
++			close(fd);
++			return 0;
++		} else if (ident == 0xffff || ident == 0x0) {
++			/* eeprom invalid */
++			close(fd);
++			return -1;
++		}
++	}
++	lseek(fd, 0, SEEK_SET);
++
+ 	bc = mmap(NULL, len, PROT_READ, MAP_PRIVATE|MAP_LOCKED, fd, 0);
+ 
+ 	if ((void *)bc != MAP_FAILED)
 --- a/Makefile
 +++ b/Makefile
 @@ -39,6 +39,15 @@ ifneq ($(filter nl80211,$(IWINFO_BACKEND

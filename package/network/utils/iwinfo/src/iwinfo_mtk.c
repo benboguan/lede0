@@ -267,6 +267,48 @@ int mtk_get_channel(const char *ifname, int *buf)
 	return -1;
 }
 
+int mtk_get_center_chan1(const char *ifname, int *buf)
+{
+	struct iwreq wrq;
+	int Ch1;
+
+	if (mtk_get_channel(ifname, &Ch1) < 0)
+		return -1;
+
+	wrq.u.data.length = sizeof(Ch1);
+	wrq.u.data.pointer = &Ch1;
+	wrq.u.data.flags = OID_802_11_GET_CENTRAL_CHAN1;
+
+	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
+	{
+		*buf = Ch1;
+		return 0;
+	}
+
+	return -1;
+}
+
+int mtk_get_center_chan2(const char *ifname, int *buf)
+{
+	struct iwreq wrq;
+	int Ch2;
+
+	if (mtk_get_channel(ifname, &Ch2) < 0)
+		return -1;
+
+	wrq.u.data.length = sizeof(Ch2);
+	wrq.u.data.pointer = &Ch2;
+	wrq.u.data.flags = OID_802_11_GET_CENTRAL_CHAN2;
+
+	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
+	{
+		*buf = Ch2;
+		return 0;
+	}
+
+	return -1;
+}
+
 int mtk_get_frequency(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
@@ -665,13 +707,11 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		memcpy(&entry.mac, &pe->Addr, sizeof(entry.mac));
 
-//		entry.signal = ((int)(pe->AvgRssi0) + (int)(pe->AvgRssi1)) / 3;
-//		entry.signal_avg = ((int)(pe->AvgRssi0) + (int)(pe->AvgRssi1)) / 3;
 		entry.signal = pe->AvgRssi1;
 		entry.signal_avg = pe->AvgRssi1;
-		entry.noise = pe->AvgRssi0;
+		entry.noise = pe->AvgRssi1 - pe->AvgSnr;
 		entry.inactive = pe->ConnectedTime;
-//		entry.connected_time = pe->ConnectedTime;
+//		entry.connected_time = pe->InactiveTime;
 
 		entry.rx_packets = pe->RxPackets;
 		entry.tx_packets = pe->TxPackets;
@@ -679,7 +719,6 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		entry.tx_bytes = pe->TxBytes;
 
 		mtk_parse_rateinfo(pe, &entry.rx_rate, &entry.tx_rate);
-//		entry.rx_rate = entry.tx_rate;
 
 		memcpy(&buf[bl], &entry, sizeof(struct iwinfo_assoclist_entry));
 
@@ -796,6 +835,7 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	char site_ssid[33];
 	char site_bssid[20];
 	char site_security[23];
+	char site_rssi[5];
 	char site_signal[9];
 	int ssid_len;
 
@@ -804,11 +844,13 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	memcpy(site_ssid, sp + 4, 33);
 	memcpy(site_bssid, sp + 37, 20);
 	memcpy(site_security, sp + 57, 23);
-	memcpy(site_signal, sp + 80, 9);
+	memcpy(site_rssi, sp + 80, 5);
+	memcpy(site_signal, sp + 85, 9);
 
 	rtrim(site_bssid);
 	rtrim(site_channel);
 	rtrim(site_security);
+	rtrim(site_rssi);
 	rtrim(site_signal);
 
 	e->channel = atoi(site_channel);
@@ -819,13 +861,14 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	parse_security((char *)site_security, &e->crypto);
 
 	int quality = atoi(site_signal);
-	int8_t rssi;
+	int rssi = atoi(site_rssi);
+	/*int8_t rssi;
 	rssi = (quality * 127 / 100) - 127;
 
 	if (quality < 1)
 	{
 		rssi = -127;
-	}
+	}*/
 
 	e->signal = rssi;
 	e->quality = quality;
@@ -872,7 +915,7 @@ int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 	{
 		struct iwinfo_scanlist_entry e;
 		// No  Ch  SSID                             BSSID               Security               Siganl(%)W-Mode  ExtCH  NT SSID_Len WPS DPID BcnRept
-		line_len = 4 + 33 + 20 + 23 + 8 + 9 + 7 + 7 + 3 + 4 + 5 + 10; // +WPS DPID
+		line_len = 4 + 33 + 20 + 23 + 5 + 9 + 7 + 7 + 3 + 4 + 5 + 10; // +WPS DPID
 		if (wrq.u.data.length < line_len + 5 + 10)
 			return -1;
 		sp = wrq.u.data.pointer;
@@ -909,7 +952,7 @@ static const uint16_t CH5G[]={
 	100, 104, 108, 112, 116, 120, 124, 128, 132, 136, //10
 
 	/* 802.11 UNII */
-	140, 144, 149, 153, 157, 161, 165
+	140, 144, 149, 153, 157, 161, 165, 169, 173, 177
 };
 
 int mtk_get_freqlist(const char *ifname, char *buf, int *len)
@@ -920,6 +963,7 @@ int mtk_get_freqlist(const char *ifname, char *buf, int *len)
 
 	if (is_5g(ifname)) {
 		for (i=0; i<ARRAY_SIZE(CH5G); ++i) {
+			entry.band = IWINFO_BAND_5;
 			entry.mhz = 5000 + 5 * CH5G[i];
 			entry.channel =  CH5G[i];
 			entry.restricted = 0;
@@ -929,6 +973,7 @@ int mtk_get_freqlist(const char *ifname, char *buf, int *len)
 		}
 	} else {
 		for (i = 0; i < MTK_MAX_CH_2G; i++) {
+			entry.band = IWINFO_BAND_24;
 			entry.mhz = 2412 + 5 * i;
 			entry.channel = i + 1;
 			entry.restricted = 0;
@@ -1041,19 +1086,53 @@ int mtk_get_mbssid_support(const char *ifname, int *buf)
 	return 0;
 }
 
+int mtk_get_hardware_id_from_l1profile(const char* chip, struct iwinfo_hardware_id *id)
+{
+	if (!strcmp(chip, "MT7615")) {
+		id->vendor_id = 0x14c3;
+		id->device_id = 0x7615;
+		id->subsystem_vendor_id = id->vendor_id;
+		id->subsystem_device_id = id->device_id;
+	} else if (!strcmp(chip, "MT7915")) {
+		id->vendor_id = 0x14c3;
+		id->device_id = 0x7915;
+		id->subsystem_vendor_id = id->vendor_id;
+		id->subsystem_device_id = id->device_id;
+	} else {
+		return -1;
+	}
+
+	return 0;
+}
+
+int mtk_get_id_from_l1profile(struct iwinfo_hardware_id *id)
+{
+	char buf[16] = {0};
+
+	/* INDEX1 */
+	if (mtk_get_l1profile_attr("INDEX1", buf, sizeof(buf)) != 0)
+		return -1;
+
+	/* INDEX0 */
+	if (mtk_get_l1profile_attr("INDEX0", buf, sizeof(buf)) != 0)
+		return -1;
+
+	return (mtk_get_hardware_id_from_l1profile(buf, id));
+}
+
 int mtk_get_hardware_id(const char *ifname, char *buf)
 {
 	struct iwinfo_hardware_id *id = (struct iwinfo_hardware_id *)buf;
+	int ret = 0;
 
 	memset(id, 0, sizeof(*id));
 
-	/* Failed to obtain hardware PCI/USB IDs... */
-	if (id->vendor_id == 0 && id->device_id == 0 &&
-		id->subsystem_vendor_id == 0 && id->subsystem_device_id == 0)
-		/* ... then board config */
-		return iwinfo_hardware_id_from_mtd(id);
+	ret = iwinfo_hardware_id_from_mtd(id);
 
-	return 0;
+	if (ret != 0)
+		ret = mtk_get_id_from_l1profile(id);
+
+	return ret;
 }
 
 static const struct iwinfo_hardware_entry *
@@ -1072,7 +1151,7 @@ int mtk_get_hardware_name(const char *ifname, char *buf)
 	const struct iwinfo_hardware_entry *hw;
 
 	if (!(hw = mtk_get_hardware_entry(ifname)))
-		memcpy(buf, "MediaTek MT7615E", 16);
+		sprintf(buf, "%s", "MediaTek");
 	else
 		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
 
@@ -1081,9 +1160,13 @@ int mtk_get_hardware_name(const char *ifname, char *buf)
 
 int mtk_get_txpower_offset(const char *ifname, int *buf)
 {
-	/* Stub */
-	*buf = 0;
-	return -1;
+	const struct iwinfo_hardware_entry *hw;
+
+	if (!(hw = mtk_get_hardware_entry(ifname)))
+		return -1;
+
+	*buf = hw->txpower_offset;
+	return 0;
 }
 
 int mtk_get_frequency_offset(const char *ifname, int *buf)
