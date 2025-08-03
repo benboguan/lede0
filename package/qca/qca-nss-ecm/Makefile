@@ -4,10 +4,10 @@ PKG_NAME:=qca-nss-ecm
 PKG_RELEASE=2
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2023-10-20
+PKG_SOURCE_DATE:=2024-11-06
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm.git
-PKG_SOURCE_VERSION:=82b27915fffdbe2cdb2d4eb70e5736ccf92e2560
-PKG_MIRROR_HASH:=643895cb187cacfcde337c19dc5a34512acc225c0db1813a15cc1b66523835c4
+PKG_SOURCE_VERSION:=30fbfa493d700270ac6c14685290f340b6ead28c
+PKG_MIRROR_HASH:=152670e96f95a7001208af21a976e3b666461fde795a56e2937fdb8fe60941ae
 
 PKG_BUILD_PARALLEL:=1
 PKG_FLAGS:=nonshared
@@ -28,8 +28,9 @@ define KernelPackage/qca-nss-ecm
 		   +@NSS_DRV_VIRT_IF_ENABLE \
 		   +@NSS_DRV_WIFI_ENABLE \
 		   +kmod-qca-nss-drv \
-    	   +kmod-bonding +kmod-nf-conntrack \
+    	 +kmod-bonding +kmod-nf-conntrack \
 		   +kmod-ppp +kmod-pppoe +kmod-pptp \
+		   +PACKAGE_iptables:iptables-mod-physdev \
 		   +PACKAGE_kmod-pppol2tp:kmod-pppol2tp \
 		   +PACKAGE_kmod-qca-mcs:kmod-qca-mcs \
 		   +PACKAGE_kmod-nat46:kmod-nat46 \
@@ -106,9 +107,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-nat46),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MAP_T_ENABLE=y
 endif
 
-ifneq ($(CONFIG_PACKAGE_kmod-ipsec),)
-ECM_MAKE_OPTS+=ECM_INTERFACE_IPSEC_ENABLE=y
-endif
+# Disable ECM IPSec support
+# ifneq ($(CONFIG_PACKAGE_kmod-ipsec),)
+# ECM_MAKE_OPTS+=ECM_INTERFACE_IPSEC_ENABLE=y
+# endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-pppoe),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_PPPOE_ENABLE=y \
@@ -152,7 +154,7 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" \
 		$(KERNEL_MAKE_FLAGS) \
 		M="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="$(EXTRA_CFLAGS) -Wno-error=unused-function " \
+		EXTRA_CFLAGS="$(EXTRA_CFLAGS) -Wno-error=unused-function -Wno-unused-variable " \
 		SoC=$(SOC) \
 		$(PKG_JOBS) \
 		modules

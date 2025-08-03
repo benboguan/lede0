@@ -342,6 +342,16 @@ config ATE_SUPPORT
 	depends on WIFI_DRIVER
 	default y	
 
+config CUSTOMER_DCC_FEATURE
+	bool "CUSTOMER_DCC_FEATURE Support"
+	depends on WIFI_DRIVER
+	default y
+
+config MGMT_TXPWR_CTRL
+	bool "Mgmt TxPower Control"
+	depends on MT_AP_SUPPORT && WIFI_EAP_FEATURE
+	default y
+
 #config MEMORY_OPTIMIZATION
 #	bool "Memory Optimization"
 #	depends on WIFI_DRIVER

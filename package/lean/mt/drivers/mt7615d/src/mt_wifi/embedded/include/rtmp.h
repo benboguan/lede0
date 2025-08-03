@@ -2151,13 +2151,13 @@ struct wifi_dev {
 #ifdef WAPP_SUPPORT
 	BOOLEAN avoid_apcli_linkdown;
 #endif
-#ifdef MGMT_TXPWR_CTRL
+//#ifdef MGMT_TXPWR_CTRL
 	BOOLEAN bPwrCtrlEn;
 	CHAR TxBasePwr;
 	CHAR TxPwrDelta;
 	CHAR MgmtTxPwr; /* Read from profile parameter*/
 	CHAR MgmtTxPwrBak;
-#endif
+//#endif
 #ifdef AMPDU_CONF_SUPPORT
 	UINT8 bRetryEnable;
 	UINT8 bAMPDURetrynum;
