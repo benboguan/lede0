@@ -4744,6 +4744,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	BOOLEAN fEpaReq;
 	BOOLEAN fgEPA[DBDC_BAND_NUM];
 	INT8 EpaGain[DBDC_BAND_NUM];
+	INT8 MgmtTxPwr[DBDC_BAND_NUM]; /* for 5G : 6M (OFDM) pwr  2.4G: 1M (CCK) pwr */
 #endif
 } AP_ADMIN_CONFIG;
 
