@@ -4666,6 +4666,7 @@ INT SetPowerDropCtrl(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		wdev->TxPwrDelta = 0;
 		/* Get EPA info by Tx Power info cmd*/
 		pAd->ApCfg.fEpaReq = TRUE;
+		pAd->ApCfg.MgmtTxPwr[ucBandIdx] = 0;
 		TxPowerShowInfo(pAd, 0, ucBandIdx);
 
 		/* Update beacon/probe TxPwr wrt profile param */

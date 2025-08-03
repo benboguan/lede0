@@ -1240,12 +1240,15 @@ VOID APStartUpForMbss(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss)
 	wdev->TxPwrDelta = 0;
 	/* Get EPA info by Tx Power info cmd*/
 	pAd->ApCfg.fEpaReq = TRUE;
+	pAd->ApCfg.MgmtTxPwr[ucBandIdx] = 0;
 	TxPowerShowInfo(pAd, 0, ucBandIdx);
 
 	/* Update beacon/probe TxPwr wrt profile param */
 	if (wdev->MgmtTxPwr) {
 		/* wait until TX Pwr event rx*/
-		RtmpusecDelay(50);
+		if (!(pAd->ApCfg.MgmtTxPwr[ucBandIdx]))
+			RtmpusecDelay(50);
+
 		update_mgmt_frame_power(pAd, wdev);
 	}
 #endif

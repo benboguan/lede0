@@ -23580,6 +23580,7 @@ INT Set_Sta_Fast_Idle_Check_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	return TRUE;
 }
 
+#ifdef MGMT_TXPWR_CTRL
 INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc)
 {
 	INT8 BandIdx;
@@ -23612,13 +23613,14 @@ INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc)
 		else
 			BandIdx = BAND0;
 
-		Tx_Pwr = (ad->ApCfg.MgmtTxPwr[BandIdx] + ad->ApCfg.EpaGain[BandIdx] + (wdev->TxPwrDelta)) / 2;
+		Tx_Pwr = (ad->ApCfg.EpaGain[BandIdx] + (wdev->TxPwrDelta)) / 2;
 
 		return Tx_Pwr;
 	}
 
 	return -EFAULT;
 }
+#endif
 
 BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_INPUT_STRUCT *wrq, USHORT subcmd)
 {
