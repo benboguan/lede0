@@ -647,6 +647,7 @@ typedef struct __RT_CMD_AP_IOCTL_CONFIG {
 	VOID *wdev;
 	ULONG priv_flags;
 	char *pCmdData;
+	UINT32 cmd_data_len;
 	INT32 CmdId_RTPRIV_IOCTL_SET;
 	char *name;
 	INT apidx;
