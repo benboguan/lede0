@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.10
+PKG_VERSION:=2.12
 PKG_RELEASE:=1
 
-PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
+PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
 
 PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 
@@ -33,9 +33,21 @@ define Trusted-Firmware-A/rk3399
   PLAT:=rk3399
 endef
 
+define Trusted-Firmware-A/rk3568
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3568
+endef
+
+define Trusted-Firmware-A/rk3588
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3588
+endef
+
 TFA_TARGETS:= \
 	rk3328 \
-	rk3399
+	rk3399 \
+	rk3568 \
+	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
   M0_GCC_NAME:=gcc-arm
@@ -63,6 +75,16 @@ ifeq ($(BUILD_VARIANT),rk3399)
   TFA_MAKE_FLAGS+= \
     M0_CROSS_COMPILE=$(PKG_BUILD_DIR)/$(M0_GCC_NAME)-$(M0_GCC_RELEASE)-$(M0_GCC_VERSION)/bin/arm-none-eabi-
 endif
+
+define Build/Compile
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		OPENSSL_DIR=$(STAGING_DIR_HOST) \
+		$(if $(DTC),DTC="$(DTC)") \
+		PLAT=$(PLAT) \
+		BUILD_STRING="OpenWrt ($(VARIANT))" \
+		$(TFA_MAKE_FLAGS)
+endef
 
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
