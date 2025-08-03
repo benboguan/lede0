@@ -79,6 +79,7 @@ detect_mt_dbdc() {
 				set wireless.default_${phyname}.ieee80211r=0
 				set wireless.default_${phyname}.ssid=${ssid}
 				set wireless.default_${phyname}.encryption=none
+				set wireless.default_${phyname}.disabled=0
 EOF
 			uci -q commit wireless
 		}

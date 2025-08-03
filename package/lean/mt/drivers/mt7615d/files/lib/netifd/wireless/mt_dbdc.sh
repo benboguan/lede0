@@ -149,13 +149,13 @@ mt_dbdc_ap_vif_pre_config() {
 			psk*)
 				enc=WPAPSK
 			;;
-			SAE*|psk3*|sae)
+			SAE*|psk3|sae)
 				enc=WPA3PSK
 			;;
-			SAE*|psk2+psk3|sae-mixed)
+			psk2+psk3|psk3-mixed|sae-mixed)
 				enc=WPA2PSKWPA3PSK
 			;;
-			8021x*|eap*|wpa)
+			8021x*|eap|wpa)
 				enc=WPA
 			;;
 			8021x*|eap2*|wpa2)
@@ -164,13 +164,13 @@ mt_dbdc_ap_vif_pre_config() {
 			8021x*|eap+eap2|wpa-mixed)
 				enc=WPA1WPA2
 			;;
-			eap3*|wpa3)
+			8021x*|wpa3) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以加密模式实际为WPA2-EAP/SHA256。
 				enc=WPA3
 			;;
-			eap2+eap3|wpa3-mixed)
-				enc=WPA2WPA3
+			8021x*|eap3-mixed|wpa3-mixed) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以选择WPA2MIX。
+				enc=WPA2MIX
 			;;
-			eap192*|wpa3-192)
+			8021x*|eap192*|wpa3-192)
 				enc=WPA3-192
 			;;
 			OWE*|owe)
@@ -208,7 +208,7 @@ mt_dbdc_ap_vif_pre_config() {
 			fi
 			ApDefKId="${ApDefKId}2;"
 			echo "WPAPSK${ApBssidNum}=${key}" >> $MTWIFI_PROFILE_PATH
-			echo "RADIUS_Key${ApBssidNum}=${auth_secret}" >> $MTWIFI_PROFILE_PATH
+			echo "RADIUS_Key${ApBssidNum}=${auth_secret:-0}" >> $MTWIFI_PROFILE_PATH
 	;;
 	WEP|wep|wep-open|wep-shared)
 		if [ "$encryption" == "wep-shared" ]; then
@@ -243,16 +243,24 @@ mt_dbdc_ap_vif_pre_config() {
 	else
 		ApRekeyMethod="${ApRekeyMethod}TIME;"
 	fi
+
+	if [ "$encryption" == "wpa" -o "$encryption" == "wpa-mixed" -o "$encryption" == "wpa2" -o "$encryption" == "wpa3" -o "$encryption" == "wpa3-mixed" -o "$encryption" == "wpa3-192" ]; then
+		echo "NasId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
+	else
+		echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
+	fi
+
 	ApK1Tp="${ApK1Tp}${K1Tp:-0};"
 	ApK2Tp="${ApK2Tp}${K2Tp:-0};"
 	ApK3Tp="${ApK3Tp}${K3Tp:-0};"
 	ApK4Tp="${ApK4Tp}${K4Tp:-0};"
 	ApHideESSID="${ApHideESSID}${hidden:-0};"
-	ApRADIUSServer="${ApRADIUSServer}${auth_server};"
+	ApWmmCapable="${ApWmmCapable}${wmm};"
+	ApRADIUSServer="${ApRADIUSServer}${auth_server:-0};"
 	ApRADIUSPort="${ApRADIUSPort}${auth_port};"
 	ApRADIUSAcctServer="${ApRADIUSAcctServer}${acct_server};"
 	ApRADIUSAcctPort="${ApRADIUSAcctPort}${acct_port};"
-	ApRADIUSAcctKey="${ApRADIUSAcctKey}${acct_secret};"
+	ApRADIUSAcctKey="${ApRADIUSAcctKey}${acct_secret:-0};"
 	ApPreAuth="${ApPreAuth}${rsn_preauth:-0};"
 	ApRRMEnable="${ApRRMEnable}${ieee80211k};"
 	ApFtSupport="${ApFtSupport}${ieee80211r};"
@@ -262,7 +270,6 @@ mt_dbdc_ap_vif_pre_config() {
 	ApFtOnly="${ApFtOnly}${ft_psk_generate_local:-0};"
 	ApFtRic="${ApFtRic}${pmk_r1_push:-0};"
 	echo "FtMdId${ApBssidNum}=${mobility_domain}" >> $MTWIFI_PROFILE_PATH
-	echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR1khId${ApBssidNum}=${r1_key_holder}" >> $MTWIFI_PROFILE_PATH
 	echo "AssocDeadLine${ApBssidNum}=${reassociation_deadline}" >> $MTWIFI_PROFILE_PATH
 
@@ -321,8 +328,8 @@ mt_dbdc_wds_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode wdstxmcs
-	set_default wdsen 3
-	set_default wdsphymode "GREENFIELD"
+	set_default wdsen 0
+	set_default wdsphymode "VHT"
 	json_select ..
 
 	[[ "$disabled" = "1" ]] && return
@@ -653,7 +660,7 @@ drv_mt_dbdc_setup() {
 			tx_stbc_2by1:1 \
 			su_beamformer:1 \
 			su_beamformee:1 \
-			mu_beamformer:0 \
+			mu_beamformer:1 \
 			mu_beamformee:1 \
 			vht_txop_ps:1 \
 			htc_vht:1 \
@@ -810,7 +817,7 @@ drv_mt_dbdc_setup() {
 	[ "${country}" == "BG" ] && countryregion_a=1 && countryregion=1
 	[ "${country}" == "CA" ] && countryregion_a=0 && countryregion=0
 	[ "${country}" == "CL" ] && countryregion_a=0 && countryregion=1
-	[ "${country}" == "CN" ] && countryregion_a=0 && countryregion=1
+	[ "${country}" == "CN" ] && countryregion_a=0 && countryregion=1 && RDRegion=CHN
 	[ "${country}" == "CO" ] && countryregion_a=0 && countryregion=0
 	[ "${country}" == "CR" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "HR" ] && countryregion_a=2 && countryregion=1
@@ -954,7 +961,7 @@ ApCliWirelessMode=
 APCwmax=6;10;4;3
 APCwmin=4;4;3;2
 ApMWDS=1
-ApCliMWDS=1
+ApCliMWDS=0
 ApProbeRspTimes=3
 APSDCapable=1
 APTxop=0;0;94;47
@@ -1001,7 +1008,7 @@ CountryRegion=${countryregion:-1}
 CountryRegionABand=${countryregion_a:-0}
 CP_SUPPORT=2
 CSPeriod=6
-DbdcBandSupport=0
+WirelessMode=${WirelessMode}
 DeauthFloodThreshold=64
 DebugFlags=0
 DfsApplyStopWifi=0
@@ -1092,7 +1099,7 @@ MboSupport=1
 MaxStaNum=${maxassoc}
 MbssMaxStaNum=${maxassoc:-64}
 MBSSWirelessMode=
-MUTxRxEnable=${mu_beamformer:-0}
+MUTxRxEnable=${mu_beamformer:-1}
 NoForwardingBTNBSSID=0
 NoForwardingMBCast=0
 NonTxBSSIndex=0
@@ -1131,7 +1138,7 @@ RegDomain=Global
 ResetCounter=1
 RTSThreshold=${rts:-2347}
 ScsEnable=0
-ScsEnable=1
+SCSEnable=1
 session_timeout_interval=0
 quiet_interval=0
 radius_acct_authentic=1
@@ -1206,7 +1213,6 @@ VOW_WATF_Q_LV2=
 VOW_WATF_Q_LV3=
 VOW_WMM_Search_Rule_Band0=
 VOW_WMM_Search_Rule_Band1=
-VgaClamp=0
 WapiAsCertPath=
 WapiAsIpAddr=
 WapiAsPort=
@@ -1242,9 +1248,6 @@ WdsTxMcs=33
 WHNAT=${whnat:-1}
 WiFiTest=0
 WirelessEvent=1
-WirelessMode=${WirelessMode}
-WNMBTMEnable=1
-WpaMixPairCipher=
 WscConfMethods=238c
 WscConfMode=0
 WscConfStatus=2
@@ -1281,6 +1284,7 @@ EOF
 	ApK3Tp=""
 	ApK4Tp=""
 	ApHideESSID=""
+	ApWmmCapable=""
 	ApRRMEnable=""
 	ApFtSupport=""
 	ApNoForwarding=""
@@ -1312,6 +1316,7 @@ EOF
 		ApK2Tp="${ApK2Tp}0;"
 		ApK3Tp="${ApK3Tp}0;"
 		ApK4Tp="${ApK4Tp}0;"
+		ApWmmCapable="${ApWmmCapable};"
 		ApNoForwarding="${ApNoForwarding};"
 		ApRekeyInterval="${ApRekeyInterval};"
 		ApPMFMFPC="${ApPMFMFPC};"
@@ -1327,7 +1332,7 @@ EOF
 	# eval sed -i 's/BssidNum=1/BssidNum=${BssidNum}/g' $MTWIFI_PROFILE_PATH
 	# echo "BssidNum=${ApBssidNum:-1}" >> $MTWIFI_PROFILE_PATH
 	echo "HideSSID=${ApHideESSID%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WmmCapable=${wmm}" >> $MTWIFI_PROFILE_PATH
+	echo "WmmCapable=${ApWmmCapable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "AuthMode=${ApAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "EncrypType=${ApEncrypType%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RADIUS_Server=${ApRADIUSServer%?}" >> $MTWIFI_PROFILE_PATH
@@ -1421,20 +1426,19 @@ EOF
 		sleep 2
 		drv_mt_dbdc_teardown $phy_name
 		mt_dbdc_vif_down $phy_name
+#Start root device
+		ifconfig ra0 up
+#restore interfaces
+		if [[ "$phy_name" = "ra0" ]]; then
+			sh $MTWIFI_CMD_OPATH
+			sh $MTWIFI_CMD_PATH
+		else
+			sh $MTWIFI_CMD_PATH
+			sh $MTWIFI_CMD_OPATH
+		fi
 	else
 		echo "Wait other process reload wifi"
 		lock $WIFI_OP_LOCK
-	fi
-
-#Start root device
-	ifconfig ra0 up
-#restore interfaces
-	if [[ "$phy_name" = "ra0" ]]; then
-		sh $MTWIFI_CMD_OPATH
-		sh $MTWIFI_CMD_PATH
-	else
-		sh $MTWIFI_CMD_PATH
-		sh $MTWIFI_CMD_OPATH
 	fi
 
 #AP模式
