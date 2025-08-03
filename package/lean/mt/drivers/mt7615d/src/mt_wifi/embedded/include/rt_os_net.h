@@ -243,6 +243,8 @@ INT p2p_virtual_if_close(PNET_DEV pDev);
 INT P2P_VirtualIF_PacketSend(IN PNDIS_PACKET skb_p, IN PNET_DEV dev_p);
 VOID RTMP_P2P_Remove(VOID *pAd);
 
+INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc);
+
 PNET_DEV RTMP_CFG80211_FindVifEntry_ByType(IN VOID *pAdSrc, IN UINT32 devType);
 
 VOID RTMP_CFG80211_AddVifEntry(IN VOID *pAdSrc, IN PNET_DEV pNewNetDev,

@@ -141,8 +141,6 @@ static void setChans(struct iw_range *prange) {
 
 }
 
-INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc);
-
 INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 {
 	VOID *pAd = NULL;
@@ -153,6 +151,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	INT apidx = 0;
 	UINT32 org_len;
 	RT_CMD_AP_IOCTL_CONFIG IoctlConfig, *pIoctlConfig = &IoctlConfig;
+	struct wifi_dev *wdev = NULL;
 
 	GET_PAD_FROM_NET_DEV(pAd, net_dev);
 
@@ -172,7 +171,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	pIoctlConfig->wdev = RTMP_OS_NETDEV_GET_WDEV(net_dev);
 	pIoctlConfig->priv_flags = RT_DEV_PRIV_FLAGS_GET(net_dev);
 	if (wrqin->u.data.length)
-	pIoctlConfig->pCmdData = wrqin->u.data.pointer;
+		pIoctlConfig->pCmdData = wrqin->u.data.pointer;
 	else
 		pIoctlConfig->pCmdData = NULL;
 	pIoctlConfig->cmd_data_len = wrqin->u.data.length;
@@ -385,11 +384,11 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID || 
 			RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS) {
 			wdev = pIoctlConfig->wdev;
-			if (wdev->if_up_down_state == FALSE) {
+			/*if (wdev->if_up_down_state == FALSE) {
 				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
 				("%s RT_PRIV_IOCTL interface is down, cmd [%x] return!!!\n", __func__, cmd));
 				return -ENETDOWN;
-			}
+			}*/
 			powerval = rtmp_get_mgmtpwr(pAd);
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("power = %d\n", powerval));
 			wrqin->u.txpower.value = powerval;/* The value of the parameter itself */
@@ -453,7 +452,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 		prange->num_txpower = 8;
 		prange->txpower_capa = IW_TXPOW_MWATT|IW_TXPOW_RANGE;
 		prange->txpower[1] = 1;
-		prange->txpower[8] = 100;
+		prange->txpower[7] = 100;
 
 		len = copy_to_user(wrq->u.data.pointer, prange,
 				   sizeof(struct iw_range));
