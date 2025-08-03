@@ -141,6 +141,8 @@ static void setChans(struct iw_range *prange) {
 
 }
 
+INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc);
+
 INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 {
 	VOID *pAd = NULL;
@@ -380,18 +382,24 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	{
 		INT32 powerval = 0;
 
-		wdev = pIoctlConfig->wdev;
-		if (wdev->if_up_down_state == FALSE) {
-			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
-			("%s RT_PRIV_IOCTL interface is down, cmd [%x] return!!!\n", __func__, cmd));
-			return -ENETDOWN;
+		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID || 
+			RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS) {
+			wdev = pIoctlConfig->wdev;
+			if (wdev->if_up_down_state == FALSE) {
+				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+				("%s RT_PRIV_IOCTL interface is down, cmd [%x] return!!!\n", __func__, cmd));
+				return -ENETDOWN;
+			}
+			powerval = rtmp_get_mgmtpwr(pAd);
+			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("power = %d\n", powerval));
+			wrqin->u.txpower.value = powerval;/* The value of the parameter itself */
+			wrqin->u.txpower.disabled = 0;/* Disable the feature */
+			wrqin->u.txpower.flags = 0;/* dBm */
+			wrqin->u.txpower.fixed = 0;/* Hardware should not use auto select */
+		} else {
+			Status = RTMP_IO_EOPNOTSUPP;
 		}
-		powerval = rtmp_get_macPower(pAd);
-		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("power = %d\n", powerval));
-		wrqin->u.txpower.value = powerval;/* The value of the parameter itself */
-		wrqin->u.txpower.disabled = 0;/* Disable the feature */
-		wrqin->u.txpower.flags = 0;/* dBm */
-		wrqin->u.txpower.fixed = 0;/* Hardware should not use auto select */
+
 		break;
 	}
 

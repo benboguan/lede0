@@ -6359,8 +6359,6 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
 	RTMP_STRING driverVersion[16];
 	UCHAR apidx = pObj->ioctl_if;
-	INT j;
-	CHAR country_num[4]={0};
 #ifdef CONFIG_MAP_SUPPORT
 	PUCHAR pStaMacAddr = NULL;
 #endif
@@ -6949,6 +6947,8 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 		break;
 
 	case OID_802_11_GET_COUNTRY_CODE:
+		UINT j;
+		CHAR country_num[4]={0};
 		wrq->u.data.length = sizeof(UINT);
 		for(j=0; j < NUM_OF_COUNTRIES; j++)
 		{
@@ -23580,11 +23580,10 @@ INT Set_Sta_Fast_Idle_Check_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	return TRUE;
 }
 
-INT32 rtmp_get_macPower(IN VOID* pAdSrc)
+INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc)
 {
-	UINT32 cmacVal = 0, omacVal = 0, val = 0, val0 = 0;
-	INT32 retPwr = 0, oPwr = 0, cPwr = 0;
-	UCHAR band = 0;
+	INT8 BandIdx;
+	INT32 Tx_Pwr = 0;
 	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)pAdSrc;
 	POS_COOKIE pObj = NULL;
 	UCHAR apidx = 0;
@@ -23599,45 +23598,26 @@ INT32 rtmp_get_macPower(IN VOID* pAdSrc)
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("pObj null!\n"));
 		return -EFAULT;
 	}
-	apidx = pObj->ioctl_if;
-	/* For all ioctl to this function, we assume that's query for AP/APCLI/GO device */
-	if ((pObj->ioctl_if_type == INT_MBSSID) || (pObj->ioctl_if_type == INT_MAIN)) {
+
+	if ((pObj->ioctl_if_type == INT_MBSSID) || (pObj->ioctl_if_type == INT_MAIN) || (pObj->ioctl_if_type == INT_APCLI) || (pObj->ioctl_if_type == INT_WDS))
+	{
+		apidx = pObj->ioctl_if;
 		if (apidx >= ad->ApCfg.BssidNum)
 			return -EFAULT;
-		wdev = &ad->ApCfg.MBSSID[apidx].wdev;
-	}
-	if (wdev)
-		band = HcGetBandByWdev(wdev);
-	else
-		band = BAND0;
-	if (band == BAND0) {
-		MAC_IO_READ32(ad->hdev_ctrl, 0x21024, &omacVal);
-		MAC_IO_READ32(ad->hdev_ctrl, 0x21020, &cmacVal);
-	} else {
-		MAC_IO_READ32(ad->hdev_ctrl, 0xa1024, &omacVal);
-		MAC_IO_READ32(ad->hdev_ctrl, 0xa1020, &cmacVal);
-	}
-		/*Unit: 0.5dBm*/
-		/*The encoding rule is 2's complement.*/
-		/*7'b0000000: 0dBm*/
-		/*7'b0000001: 0.5dBm*/
-		/*7'b0111111: 31.5dBm*/
-		/*7'b1111111: -0.5dBm*/
-		/*7'b1000000: -32dBm*/
-	val = (cmacVal & 0xff);
-	if (val <= 0x3f)
-		cPwr = ((INT32)val >> 1);
-	else
-		cPwr = (((INT32)(val - 0x80) >> 1) | 0x80000000);
-	val0 = (omacVal & 0xff);
-	if (val0 <= 0x3f)
-		oPwr = ((INT32)val0 >> 1);
-	else
-		oPwr = (((INT32)(val0 - 0x80) >> 1) | 0x80000000);
 
-	retPwr = ((oPwr > cPwr) ? oPwr : cPwr);
-	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Got %s Power %d\n", (band == BAND0)?"2G":"5G", retPwr));
-	return retPwr;
+		wdev = &ad->ApCfg.MBSSID[apidx].wdev;
+
+		if (wdev)
+			BandIdx = HcGetBandByWdev(wdev);
+		else
+			BandIdx = BAND0;
+
+		Tx_Pwr = (ad->ApCfg.MgmtTxPwr[BandIdx] + ad->ApCfg.EpaFeGain[BandIdx] + (wdev->TxPwrDelta)) / 2;
+
+		return Tx_Pwr;
+	}
+
+	return -EFAULT;
 }
 
 BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_INPUT_STRUCT *wrq, USHORT subcmd)
