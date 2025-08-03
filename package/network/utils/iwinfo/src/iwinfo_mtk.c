@@ -353,8 +353,23 @@ int mtk_get_frequency(const char *ifname, int *buf)
 
 int mtk_get_txpower(const char *ifname, int *buf)
 {
-	*buf = 20;
-	return 0;
+	//*buf = 20;
+	//return 0;
+	struct iwreq wrq;
+
+	wrq.u.txpower.flags = 0;
+
+	if (mtk_ioctl(ifname, SIOCGIWTXPOW, &wrq) >= 0)
+	{
+		if(wrq.u.txpower.flags & IW_TXPOW_MWATT)
+			*buf = iwinfo_mw2dbm(wrq.u.txpower.value);
+		else
+			*buf = wrq.u.txpower.value;
+
+		return 0;
+	}
+
+	return -1;
 }
 
 int mtk_get_bitrate(const char *ifname, int *buf)
@@ -372,7 +387,7 @@ int mtk_get_bitrate(const char *ifname, int *buf)
 
 int mtk_get_signal(const char *ifname, int *buf)
 {
-	int ra_snr_sum, num;
+	int rssi_sum, num;
 	char tmp_buf[8192];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
@@ -380,18 +395,18 @@ int mtk_get_signal(const char *ifname, int *buf)
 	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
 	{
 		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		ra_snr_sum = 0;
+		rssi_sum = 0;
 
 		for (i = 0; i < num; i++)
 		{
 			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
 			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
 
-			ra_snr_sum -= tmp.signal;
+			rssi_sum -= tmp.signal;
 		}
 
 		if (num > 0)
-			*buf = -(ra_snr_sum / num);
+			*buf = -(rssi_sum / num);
 		else
 			*buf = -127;
 
@@ -403,7 +418,7 @@ int mtk_get_signal(const char *ifname, int *buf)
 
 int mtk_get_noise(const char *ifname, int *buf)
 {
-	int ra_snr_sum, num;
+	int noise_sum, num;
 	char tmp_buf[8192];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
@@ -411,18 +426,18 @@ int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
 	{
 		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		ra_snr_sum = 0;
+		noise_sum = 0;
 
 		for (i = 0; i < num; i++)
 		{
 			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
 			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
 
-			ra_snr_sum -= tmp.noise;
+			noise_sum -= tmp.noise;
 		}
 
 		if (num > 0)
-			*buf = -(ra_snr_sum / num);
+			*buf = -(noise_sum / num);
 		else
 			*buf = -127;
 
@@ -438,25 +453,14 @@ int mtk_get_quality(const char *ifname, int *buf)
 
 	if (!mtk_get_signal(ifname, &signal))
 	{
-		/* A positive signal level is usually just a quality
-		 * value, pass through as-is */
-		if (signal >= 0)
-		{
-			*buf = signal;
-		}
-
-		/* The mtk wext compat layer assumes a signal range
-		 * of -127 dBm to -27 dBm, the quality value is derived
-		 * by adding fix 127 to the mtk signal level */
+		if (signal >= -50)
+			*buf = 100;
+		else if (signal >= -80 && signal < -50)
+			*buf = (24 + ((signal + 80) * 26) / 10);
+		else if (signal >= -90 && signal < -80)
+			*buf = (((signal + 90) * 26) / 10);
 		else
-		{
-			if (signal < -127)
-				signal = -127;
-			else if (signal > -27)
-				signal = -27;
-
-			*buf = (signal + 127);
-		}
+			*buf = 0;
 
 		return 0;
 	}
