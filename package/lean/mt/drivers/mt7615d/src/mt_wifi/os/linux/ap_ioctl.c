@@ -55,14 +55,14 @@ struct iw_priv_args ap_privtab[] = {
 	  IW_PRIV_TYPE_CHAR | 1536, 0, "set" },
 	{ RTPRIV_IOCTL_SHOW, IW_PRIV_TYPE_CHAR | 1024, 0, "show" },
 	{ RTPRIV_IOCTL_GSITESURVEY, IW_PRIV_TYPE_CHAR | 1024,
-	  IW_PRIV_TYPE_CHAR | 1024, "get_site_survey" },
+	  IW_PRIV_TYPE_CHAR | IW_PRIV_SIZE_MASK, "get_site_survey" },
 	{ RTPRIV_IOCTL_SET_WSCOOB, IW_PRIV_TYPE_CHAR | 1024,
 	  IW_PRIV_TYPE_CHAR | 1024, "set_wsc_oob" },
 	{ RTPRIV_IOCTL_GET_MAC_TABLE, IW_PRIV_TYPE_CHAR | 1024,
 	  IW_PRIV_TYPE_CHAR | 1024, "get_mac_table" },
 	{ RTPRIV_IOCTL_GET_DRIVER_INFO, IW_PRIV_TYPE_CHAR | 1024,
 	  IW_PRIV_TYPE_CHAR | 1024, "get_driverinfo" },
-	{ RTPRIV_IOCTL_E2P, IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024,
+	{ RTPRIV_IOCTL_E2P, IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | IW_PRIV_SIZE_MASK,
 	  "e2p" },
 #if defined(DBG) || (defined(BB_SOC) && defined(CONFIG_ATE))
 	{ RTPRIV_IOCTL_BBP, IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024,
@@ -451,7 +451,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 		/* txpower */
 		prange->num_txpower = 8;
 		prange->txpower_capa = IW_TXPOW_MWATT|IW_TXPOW_RANGE;
-		prange->txpower[1] = 1;
+		prange->txpower[0] = 1;
 		prange->txpower[7] = 100;
 
 		len = copy_to_user(wrq->u.data.pointer, prange,

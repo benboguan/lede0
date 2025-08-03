@@ -549,8 +549,8 @@ static VOID RTMPOldChannelCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 static VOID RTMPWHNATCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 {
 	pAd->CommonCfg.whnat_en = os_str_tol(Buffer, 0, 10);
-	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
-		 ("WHNAT=%d\n", pAd->CommonCfg.whnat_en));
+	hif_core_ops_register(pAd->CommonCfg.whnat_en, pAd->infType);
+	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("WHNAT=%d\n", pAd->CommonCfg.whnat_en));
 }
 #endif /*WHNAT_SUPPORT*/
 

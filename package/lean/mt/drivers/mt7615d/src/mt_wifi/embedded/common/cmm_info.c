@@ -6029,7 +6029,7 @@ VOID RTMPIoctlGetSiteSurvey(IN PRTMP_ADAPTER pAdapter,
 	sprintf(msg, "%s", "\n");
 	sprintf(msg + strlen(msg), "Total=%-4d", pAdapter->ScanTab.BssNr);
 	sprintf(msg + strlen(msg), "%s", "\n");
-	sprintf(msg + strlen(msg), "%-4s%-4s%-33s%-20s%-23s%-8s%-9s%-7s%-7s%-3s\n",
+	sprintf(msg + strlen(msg), "%-4s%-4s%-33s%-20s%-23s%-5s%-9s%-7s%-7s%-3s\n",
 		"No", "Ch", "SSID", "BSSID", "Security", "Rssi", "Signal(%)", "W-Mode",
 		" ExtCH", " NT");
 

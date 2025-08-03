@@ -1216,13 +1216,17 @@ void announce_802_3_packet(IN VOID *pAdSrc, IN PNDIS_PACKET pPacket,
 #endif
 
 #ifdef CONFIG_FAST_NAT_SUPPORT
-		/* bruce+
-		 *	ra_sw_nat_hook_rx return 1 --> continue
-		 *	ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
-		 */
-		if (ra_sw_nat_hook_rx != NULL) {
+		if (ra_sw_nat_hook_rx) {
 #ifdef WHNAT_SUPPORT
 			RTMP_CHIP_CAP *cap = hc_get_chip_cap(pAd->hdev_ctrl);
+			BOOLEAN whnat_rx_en = pAd->CommonCfg.whnat_en &&
+									(cap->tkn_info.feature & TOKEN_RX);
+#else
+			BOOLEAN whnat_rx_en = FALSE;
+#endif
+#ifdef PKTLOSS_CHK
+			if (pAd->pktloss_chk.enable)
+				pAd->pktloss_chk.pktloss_chk_handler(pAd, GET_OS_PKT_DATAPTR(pRxPkt), MAT_ETHER_HDR_LEN, 3, FALSE);
 #endif
 			RtmpOsPktProtocolAssign(pRxPkt);
 			RtmpOsPktNatMagicTag(pRxPkt);

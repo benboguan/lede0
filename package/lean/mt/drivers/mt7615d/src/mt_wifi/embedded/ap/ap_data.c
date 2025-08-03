@@ -107,6 +107,10 @@ static VOID ap_tx_ok_update(struct _RTMP_ADAPTER *ad, struct wifi_dev *wdev,
 			}
 			return;
 		}
+	} else {
+		/*if WHNAT enable, query from CR4 and then update it*/
+		if ((ad->CommonCfg.whnat_en) && (IS_ASIC_CAP(ad, fASIC_CAP_MCU_OFFLOAD)))
+			return;
 	}
 #else
 	/*if WHNAT enable, query from CR4 and then update it*/
