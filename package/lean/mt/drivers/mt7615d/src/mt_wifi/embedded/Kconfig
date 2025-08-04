@@ -100,6 +100,11 @@ config TPC_SUPPORT
 	depends on WIFI_DRIVER
 	default y
 
+config TXRX_STAT_SUPPORT
+	bool "TxRx Stats Support"
+	depends on WIFI_DRIVER
+	default n
+
 config ICAP_SUPPORT
 	bool "ICAP Support"
 	depends on WIFI_DRIVER
@@ -328,6 +333,11 @@ config RF_LOCKDOWN_SUPPORT
 
 config LINK_TEST_SUPPORT
 	bool "Link Test Support"
+	depends on WIFI_DRIVER
+	default y
+	
+config WIFI_EAP_FEATURE
+	bool "EAP Feature Support"
 	depends on WIFI_DRIVER
 	default y
 

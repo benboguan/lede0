@@ -40,7 +40,7 @@
 
 
 #ifdef CONFIG_FAST_NAT_SUPPORT
-#include "hwnat/ra_nat.h"
+#include <net/ra_nat.h>
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 
 #define BSSID_WCID_TO_REMOVE 1

@@ -386,4 +386,9 @@ config RCSA_SUPPORT
 config CUSTOMER_DCC_FEATURE
 	bool "CUSTOMER_DCC_FEATURE Support"
 	depends on WIFI_DRIVER
-	default y
+	default n
+
+config CUSTOMER_RSG_FEATURE
+	bool "CUSTOMER_RSG_FEATURE Support"
+	depends on WIFI_DRIVER
+	default n

@@ -1011,7 +1011,7 @@ struct {
 } BSSIDENTRY;
 
 #ifdef CUSTOMER_DCC_FEATURE
-VOID APChannelSwitch(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
+NTSTATUS APChannelSwitch(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 {
 	UCHAR apIdx;
 	BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[MAIN_MBSSID];
@@ -1029,10 +1029,10 @@ VOID APChannelSwitch(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 	}
 
 	if (pMbss == NULL)
-		return;
+		goto end;
 	pDot11h = pMbss->wdev.pDot11_H;
 	if (pDot11h == NULL)
-		return;
+		goto end;
 		/* Normal DFS */
 #if defined(MT_DFS_SUPPORT) && defined(BACKGROUND_SCAN_SUPPORT)
 	if (pMbss->wdev.channel >= 36) {
@@ -1059,7 +1059,7 @@ VOID APChannelSwitch(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 		if (DfsStopWifiCheck(pAd)) {
 			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF,
 				 ("[%s] Stop AP Startup\n", __func__));
-			return;
+			goto end;
 		}
 #endif
 	APStartUp(pAd, pMbss, apOper);
@@ -1076,7 +1076,8 @@ VOID APChannelSwitch(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 #endif
 	}
 #endif
-	return;
+end:
+	return 0;
 }
 #endif
 

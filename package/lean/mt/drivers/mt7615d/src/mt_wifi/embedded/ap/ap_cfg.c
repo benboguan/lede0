@@ -39,6 +39,10 @@
 #include "hdev/hdev_basic.h"
 #endif
 
+#ifdef TR181_SUPPORT
+#include "wlan_config/config_internal.h"
+#endif
+
 #define A_BAND_REGION_0 0
 #define A_BAND_REGION_1 1
 #define A_BAND_REGION_2 2
@@ -23579,48 +23583,6 @@ INT Set_Sta_Fast_Idle_Check_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		  pAd->StaFastIdleCheckEnable));
 	return TRUE;
 }
-
-#ifdef MGMT_TXPWR_CTRL
-INT32 rtmp_get_mgmtpwr(IN VOID *pAdSrc)
-{
-	INT8 BandIdx;
-	INT32 Tx_Pwr = 0;
-	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)pAdSrc;
-	POS_COOKIE pObj = NULL;
-	UCHAR apidx = 0;
-	struct wifi_dev *wdev = NULL;
-
-	if (ad == NULL) {
-		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ad null!\n"));
-		return -EFAULT;
-	}
-	pObj = (POS_COOKIE)ad->OS_Cookie;
-	if (pObj == NULL) {
-		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("pObj null!\n"));
-		return -EFAULT;
-	}
-
-	if ((pObj->ioctl_if_type == INT_MBSSID) || (pObj->ioctl_if_type == INT_MAIN) || (pObj->ioctl_if_type == INT_APCLI) || (pObj->ioctl_if_type == INT_WDS))
-	{
-		apidx = pObj->ioctl_if;
-		if (apidx >= ad->ApCfg.BssidNum)
-			return -EFAULT;
-
-		wdev = &ad->ApCfg.MBSSID[apidx].wdev;
-
-		if (wdev)
-			BandIdx = HcGetBandByWdev(wdev);
-		else
-			BandIdx = BAND0;
-
-		Tx_Pwr = (ad->ApCfg.EpaGain[BandIdx] + (wdev->TxPwrDelta)) / 2;
-
-		return Tx_Pwr;
-	}
-
-	return -EFAULT;
-}
-#endif
 
 BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_INPUT_STRUCT *wrq, USHORT subcmd)
 {

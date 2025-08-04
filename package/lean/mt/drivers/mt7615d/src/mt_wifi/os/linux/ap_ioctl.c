@@ -379,28 +379,18 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 
 	case SIOCGIWTXPOW: /*get transmit power (dBm) */
 	{
-		INT32 powerval = 0;
+		UINT32 power;
 
-		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID || 
-			RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS) {
-			wdev = pIoctlConfig->wdev;
-			/*if (wdev->if_up_down_state == FALSE) {
-				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
-				("%s RT_PRIV_IOCTL interface is down, cmd [%x] return!!!\n", __func__, cmd));
-				return -ENETDOWN;
-			}*/
-			powerval = rtmp_get_mgmtpwr(pAd);
-			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("power = %d\n", powerval));
-			wrqin->u.txpower.value = powerval;/* The value of the parameter itself */
-			wrqin->u.txpower.disabled = 0;/* Disable the feature */
-			wrqin->u.txpower.flags = 0;/* dBm */
-			wrqin->u.txpower.fixed = 0;/* Hardware should not use auto select */
-		} else {
-			Status = RTMP_IO_EOPNOTSUPP;
-		}
+	    wrqin->u.txpower.value = power;
+	    wrqin->u.txpower.fixed = 0;
+	    wrqin->u.txpower.disabled = 0;
+	    wrqin->u.txpower.flags = 0;
 
-		break;
-	}
+		RTMP_AP_IoctlHandle(pAd, wrq, CMD_RTPRIV_IOCTL_AP_SIOCGIWTXPOW, 0,
+							power, RT_DEV_PRIV_FLAGS_GET(net_dev));
+
+		wrqin->u.txpower.value = power;
+	} break;
 
 	case SIOCSIWTXPOW: /*set transmit power (dBm) */
 

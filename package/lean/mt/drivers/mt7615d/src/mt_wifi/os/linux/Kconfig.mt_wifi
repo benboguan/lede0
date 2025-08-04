@@ -345,7 +345,12 @@ config ATE_SUPPORT
 config CUSTOMER_DCC_FEATURE
 	bool "CUSTOMER_DCC_FEATURE Support"
 	depends on WIFI_DRIVER
-	default y
+	default n
+
+config CUSTOMER_RSG_FEATURE
+	bool "CUSTOMER_RSG_FEATURE Support"
+	depends on WIFI_DRIVER
+	default n
 
 config MGMT_TXPWR_CTRL
 	bool "Mgmt TxPower Control"
