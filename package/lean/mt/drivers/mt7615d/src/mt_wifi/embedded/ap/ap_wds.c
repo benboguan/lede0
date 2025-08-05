@@ -836,6 +836,55 @@ VOID AsicUpdateWdsEncryption(RTMP_ADAPTER *pAd, UCHAR wcid)
 	if (pSecConfig->PairwiseCipher == 0x0)
 		SET_CIPHER_NONE(pSecConfig->PairwiseCipher);
 
+	/* Decide Group cipher */
+	if ((IS_AKM_OPEN(pSecConfig->AKMMap) || IS_AKM_SHARED(pSecConfig->AKMMap))
+		&& (IS_CIPHER_WEP(pSecConfig->PairwiseCipher))) {
+		/* WEP */
+		pSecConfig->GroupCipher = pSecConfig->PairwiseCipher;
+		pSecConfig->GroupKeyId = pSecConfig->PairwiseKeyId;
+	} else if (IS_AKM_WPA_CAPABILITY(pSecConfig->AKMMap)
+			   && IS_CIPHER_TKIP(pSecConfig->PairwiseCipher)) {
+		/* Mix mode */
+		SET_CIPHER_TKIP(pSecConfig->GroupCipher);
+	} else
+		pSecConfig->GroupCipher = pSecConfig->PairwiseCipher;
+
+	/* Default key index is always 2 in WPA mode */
+	if (IS_AKM_WPA_CAPABILITY(pSecConfig->AKMMap))
+		pSecConfig->GroupKeyId = 1;
+
+#ifdef DOT11_SAE_SUPPORT
+	if (IS_AKM_WPA3PSK(pSecConfig->AKMMap) || IS_AKM_WPA3PSK_ONLY(pSecConfig->AKMMap)) {
+		SET_AKM_WPA3PSK(pSecConfig->AKMMap);
+
+		if (IS_CIPHER_GCMP256(pSecConfig->PairwiseCipher))
+			SET_CIPHER_GCMP256(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_GCMP128(pSecConfig->PairwiseCipher))
+			SET_CIPHER_GCMP128(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_CCMP256(pSecConfig->PairwiseCipher))
+			SET_CIPHER_CCMP256(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_CCMP128(pSecConfig->PairwiseCipher))
+			SET_CIPHER_CCMP128(pSecConfig->PairwiseCipher);
+	} else
+#endif
+	if (IS_AKM_WPA2PSK(pSecConfig->AKMMap) || IS_AKM_WPA2PSK_SHA256(pSecConfig->AKMMap)) {
+		SET_AKM_WPA2PSK(pSecConfig->AKMMap);
+
+		if (IS_CIPHER_CCMP256(pSecConfig->PairwiseCipher))
+			SET_CIPHER_CCMP256(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_CCMP128(pSecConfig->PairwiseCipher))
+			SET_CIPHER_CCMP128(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_TKIP(pSecConfig->PairwiseCipher))
+			SET_CIPHER_TKIP(pSecConfig->PairwiseCipher);
+	} else if (IS_AKM_WPA1PSK(pSecConfig->AKMMap)) {
+		SET_AKM_WPA1PSK(pSecConfig->AKMMap);
+
+		if (IS_CIPHER_CCMP128(pSecConfig->PairwiseCipher))
+			SET_CIPHER_CCMP128(pSecConfig->PairwiseCipher);
+		if (IS_CIPHER_TKIP(pSecConfig->PairwiseCipher))
+			SET_CIPHER_TKIP(pSecConfig->PairwiseCipher);
+	}
+
 	/* Set key material to Asic */
 	os_zero_mem(&Info, sizeof(ASIC_SEC_INFO));
 	Info.Operation = SEC_ASIC_ADD_PAIRWISE_KEY;

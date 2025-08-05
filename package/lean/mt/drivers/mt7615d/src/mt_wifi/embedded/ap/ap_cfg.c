@@ -39,10 +39,6 @@
 #include "hdev/hdev_basic.h"
 #endif
 
-#ifdef TR181_SUPPORT
-#include "wlan_config/config_internal.h"
-#endif
-
 #define A_BAND_REGION_0 0
 #define A_BAND_REGION_1 1
 #define A_BAND_REGION_2 2
@@ -8164,7 +8160,7 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 					      sizeof(RT_802_11_ACL));
 
 		break;
-#ifdef CONFIG_HOTSPOT
+//#ifdef CONFIG_HOTSPOT
 #ifdef CONFIG_DOT11V_WNM
 
 	case OID_802_11_WNM_IPV4_PROXY_ARP_LIST: {
@@ -8205,6 +8201,9 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 	case OID_802_11_SECURITY_TYPE: {
 		BSS_STRUCT *pMbss;
 		PAPCLI_STRUCT pApCliEntry;
+		PMAC_TABLE_ENTRY pEntry = NULL;
+		PRT_802_11_WDS_ENTRY wds_entry;
+		UCHAR wcid;
 		PUCHAR pType;
 		struct security_type_new *SecurityType;
 
@@ -8223,13 +8222,21 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 			SecurityType->encryp_type = pApCliEntry->wdev.SecConfig.PairwiseCipher;
 			wrq->u.data.length = sizeof(*SecurityType);
 			Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
+		} else if (pObj->ioctl_if_type == INT_WDS) {
+			pEntry = &pAd->MacTab.Content[wcid];
+			wds_entry = &pAd->WdsTab.WdsEntry[pEntry->func_tb_idx];
+			SecurityType->ifindex = pEntry->func_tb_idx;
+			SecurityType->auth_mode = wds_entry->wdev.SecConfig.AKMMap;
+			SecurityType->encryp_type = wds_entry->wdev.SecConfig.PairwiseCipher;
+			wrq->u.data.length = sizeof(*SecurityType);
+			Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
 		} else if(pObj->ioctl_if_type == INT_MAIN || pObj->ioctl_if_type == INT_MBSSID) {
-		pMbss = &pAd->ApCfg.MBSSID[pObj->ioctl_if];
-		SecurityType->ifindex = pObj->ioctl_if;
-		SecurityType->auth_mode = pMbss->wdev.SecConfig.AKMMap;
-		SecurityType->encryp_type = pMbss->wdev.SecConfig.PairwiseCipher;
-		wrq->u.data.length = sizeof(*SecurityType);
-		Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
+			pMbss = &pAd->ApCfg.MBSSID[pObj->ioctl_if];
+			SecurityType->ifindex = pObj->ioctl_if;
+			SecurityType->auth_mode = pMbss->wdev.SecConfig.AKMMap;
+			SecurityType->encryp_type = pMbss->wdev.SecConfig.PairwiseCipher;
+			wrq->u.data.length = sizeof(*SecurityType);
+			Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
 		}
 		os_free_mem(pType);
 	} break;
@@ -8264,7 +8271,7 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 		pAd->ApCfg.MBSSID[pObj->ioctl_if].GASCtrl.b11U_enable = FALSE;
 	} break;
 #endif /* CONFIG_HOTSPOT_R2 */
-#endif
+//#endif
 #ifdef WAPP_SUPPORT
 	case OID_802_11_WIFI_VER: {
 		wrq->u.data.length = strlen(AP_DRIVER_VERSION);
