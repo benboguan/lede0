@@ -480,26 +480,6 @@ int mtk_get_quality_max(const char *ifname, int *buf)
 	return 0;
 }
 
-static char *mtk_array_get(char *p, int idx) {
-	int i;
-	char *tail;
-	for (i=0; i<idx; ++i) {
-		p = strchr(p, ';');
-		if (p == NULL) {
-			return NULL;
-		}
-		p += 1;
-	}
-	tail = strchr(p, ';');
-	if (!tail) {
-		tail = strchr(p, '\n');
-	}
-	if (!tail) {
-		*tail = '\0';
-	}
-	return p;
-}
-
 int mtk_get_encryption(const char *ifname, char *buf)
 {
 	struct iwreq wrq;
