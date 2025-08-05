@@ -379,17 +379,30 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 
 	case SIOCGIWTXPOW: /*get transmit power (dBm) */
 	{
-		UINT32 power;
+		INT8 Tx_Pwr, Tx_Base_pwr, BandIdx;
+		POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
+		UCHAR apidx = pObj->ioctl_if;
 
-	    wrqin->u.txpower.value = power;
+		if (apidx >= pAd->ApCfg.BssidNum)
+			return -ENETDOWN;
+
+		wdev = &pAd->ApCfg.MBSSID[apidx].wdev;
+
+		if (wdev)
+			BandIdx = HcGetBandByWdev(wdev);
+		else
+			BandIdx = BAND0;
+
+		Tx_Pwr = (ApCfg.MgmtTxPwr[BandIdx] + pAd->ApCfg.EpaGain[BandIdx] + (wdev->TxPwrDelta)) / 2;
+
 	    wrqin->u.txpower.fixed = 0;
 	    wrqin->u.txpower.disabled = 0;
 	    wrqin->u.txpower.flags = 0;
 
 		RTMP_AP_IoctlHandle(pAd, wrq, CMD_RTPRIV_IOCTL_AP_SIOCGIWTXPOW, 0,
-							power, RT_DEV_PRIV_FLAGS_GET(net_dev));
+							Tx_Pwr, RT_DEV_PRIV_FLAGS_GET(net_dev));
 
-		wrqin->u.txpower.value = power;
+		wrqin->u.txpower.value = Tx_Pwr;
 	} break;
 
 	case SIOCSIWTXPOW: /*set transmit power (dBm) */
