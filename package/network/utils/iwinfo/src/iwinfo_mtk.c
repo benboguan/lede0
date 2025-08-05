@@ -368,6 +368,10 @@ int mtk_get_txpower(const char *ifname, int *buf)
 
 		return 0;
 	}
+	else
+	{
+		*buf = 25;
+	}
 
 	return -1;
 }
@@ -498,121 +502,88 @@ static char *mtk_array_get(char *p, int idx) {
 
 int mtk_get_encryption(const char *ifname, char *buf)
 {
-	FILE *fp;
-	const char *filename;
-	int ret = -1;
-	char buffer[512] = {0};
-	char *p = NULL;
-	int idx;
-	int gcmp = 0;
-	int aes = 0;
-	int tkip = 0;
-	int tkipaes = 0;
+	struct iwreq wrq;
+	struct security_info secinfo;
+	unsigned int authMode, encryMode;
+	struct iwinfo_crypto_entry *c = (struct iwinfo_crypto_entry *)buf;
 
-	struct iwinfo_crypto_entry *enc = (struct iwinfo_crypto_entry *)buf;
+	wrq.u.data.length = sizeof(secinfo);
+	wrq.u.data.pointer = &secinfo;
+	wrq.u.data.flags = OID_802_11_SECURITY_TYPE;
 
-	char data[10];
-	if (mtk_oid_ioctl(ifname, RT_OID_VERSION_INFO, data, sizeof(data)) < 0)
-		return -1;
-
-	if (is_5g(ifname)) {
-		filename = "/tmp/profiles/mt_dbdc_5g.dat";
-	} else {
-		filename = "/tmp/profiles/mt_dbdc_2g.dat";
-	}
-	fp = fopen(filename, "r");
-	if (fp == NULL)
+	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
 	{
-		fprintf(stderr, "open ifname:%s failed.\n", ifname);
-		return -1;
-	}
-	idx = ifname[strlen(ifname)-1] - '0';
-	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-		if (!strncmp(buffer, "AuthMode=", 9)) {
-			p = buffer + 9;
-			p = mtk_array_get(p, idx);
-			if (!p)
-				goto end;
-			if (strstr(p, "WPA3"))
-			{
-				enc->enabled = 1;
-				if (strstr(p, "WPA2PSKWPA3PSK"))
-					enc->wpa_version = 5;
-				else if (strstr(p, "WPA3PSK"))
-					enc->wpa_version = 4;
+		authMode = secinfo.auth_mode;
+		encryMode = secinfo.encryp_type;
 
-				enc->auth_suites |= IWINFO_KMGMT_SAE;
-			}
-			else if (strstr(p, "WPA"))
-			{
-				enc->enabled = 1;
-				if (strstr(p, "WPAPSKWPA2PSK"))
-					enc->wpa_version = 3;
-				else if (strstr(p, "WPA2PSK"))
-					enc->wpa_version = 2;
-				else if (strstr(p, "WPAPSK"))
-					enc->wpa_version = 1;
+		c->auth_algs |= IWINFO_AUTH_OPEN;
+		if (IS_AKM_SHARED(authMode))
+			c->auth_algs |= IWINFO_AUTH_SHARED;			
 
-				enc->auth_suites |= IWINFO_KMGMT_PSK;
-			}
-			else if (strstr(p, "OWE"))
-			{
-				enc->enabled = 1;
-				if (strstr(p, "OWE"))
-					enc->wpa_version = 4;
+		if (IS_AKM_WPA1(authMode) || IS_AKM_FT_WPA2(authMode) || IS_AKM_WPANONE(authMode) ||
+			IS_AKM_WPA3(authMode) || IS_AKM_WPA2(authMode) || IS_AKM_WPA3_192BIT(authMode) ||
+			IS_AKM_SUITEB_SHA256(authMode) || IS_AKM_SUITEB_SHA384(authMode) ||
+			IS_AKM_FILS_SHA256(authMode) || IS_AKM_FILS_SHA384(authMode))
+			c->auth_suites |= IWINFO_KMGMT_8021x;
 
-				enc->auth_suites |= IWINFO_KMGMT_OWE;
-			}
-			else if (strstr(p, "WEP"))
-			{
-				enc->enabled = 1;
-				enc->auth_algs |= IWINFO_AUTH_OPEN | IWINFO_AUTH_SHARED;
-				enc->pair_ciphers |= IWINFO_CIPHER_WEP104 | IWINFO_CIPHER_WEP40;
-				enc->auth_suites |= IWINFO_KMGMT_NONE;
-				enc->group_ciphers = enc->pair_ciphers;
-			}
-		} else if (!strncmp(buffer, "EncrypType=", 11)) {
-			if (enc->pair_ciphers & (IWINFO_CIPHER_WEP104 | IWINFO_CIPHER_WEP40))
-				continue;
-			p = buffer + 11;
-			p = mtk_array_get(p, idx);
-			if (!p)
-				goto end;
-			if (strstr(p, "GCMP"))
-				gcmp = 1;
-			if (strstr(p, "AES"))
-				aes = 1;
-			if (strstr(p, "TKIP"))
-				tkip = 1;
-			if (strstr(p, "TKIPAES"))
-				tkipaes = 1;
-		}
-	}
+		if (IS_AKM_WPA1PSK(authMode) || IS_AKM_WPA2PSK(authMode) || IS_AKM_FT_WPA2PSK(authMode) ||
+			IS_AKM_WPA2PSK_SHA256(authMode))
+			c->auth_suites |= IWINFO_KMGMT_PSK;
 
-	if (enc->enabled && enc->auth_suites & IWINFO_KMGMT_SAE) {
-		if (gcmp)
-			enc->pair_ciphers |= IWINFO_CIPHER_GCMP;
-		if (aes)
-			enc->pair_ciphers |= IWINFO_CIPHER_CCMP;
+		if (IS_AKM_FT_SAE_SHA256(authMode) || IS_AKM_SAE_SHA256(authMode) || IS_AKM_WPA3PSK(authMode))
+			c->auth_suites |= IWINFO_KMGMT_SAE;
 
-		enc->group_ciphers = enc->pair_ciphers;
+		if (IS_AKM_OWE(authMode))
+			c->auth_suites |= IWINFO_KMGMT_OWE;
+
+		if (IS_AKM_WPA1(authMode) || IS_AKM_WPA1PSK(authMode))
+			c->wpa_version |= 1 << 0;
+
+		if (IS_AKM_WPA2(authMode) || IS_AKM_WPA2PSK(authMode) || IS_AKM_FT_WPA2(authMode) ||
+			IS_AKM_FT_WPA2PSK(authMode) || IS_AKM_WPA2_SHA256(authMode) || IS_AKM_WPA2PSK_SHA256(authMode) ||
+			IS_AKM_FT_WPA2_SHA384(authMode) || IS_AKM_FILS_SHA256(authMode) || IS_AKM_FILS_SHA384(authMode))
+			c->wpa_version |= 1 << 1;
+
+		if (IS_AKM_WPA3(authMode) || IS_AKM_WPA3PSK(authMode) || IS_AKM_WPA3_192BIT(authMode) ||
+			IS_AKM_SUITEB_SHA256(authMode) || IS_AKM_SUITEB_SHA384(authMode) || IS_AKM_OWE(authMode) ||
+			IS_AKM_FT_SAE_SHA256(authMode) || IS_AKM_SAE_SHA256(authMode))
+			c->wpa_version |= 1 << 2;
+
+		if (IS_CIPHER_NONE(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_NONE;
+
+		if (IS_CIPHER_WEP40(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_WEP40;
+
+		if (IS_CIPHER_WEP104(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_WEP104;
+
+		if (IS_CIPHER_TKIP(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_TKIP;
+
+		if (IS_CIPHER_CCMP128(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_CCMP;
+
+		if (IS_CIPHER_GCMP128(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_GCMP;
+
+		if (IS_CIPHER_CCMP256(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_CCMP256;
+
+		if (IS_CIPHER_GCMP256(encryMode))
+			c->pair_ciphers |= IWINFO_CIPHER_GCMP256;
+
+		c->group_ciphers = c->pair_ciphers;
+
+		if (IS_AKM_OPEN(authMode) && IS_CIPHER_NONE(encryMode))
+			c->enabled = 0;
+		else
+			c->enabled = 1;
+
+		return 0;
 	}
 
-	if (enc->enabled && enc->auth_suites & IWINFO_KMGMT_PSK) {
-		if (aes)
-			enc->pair_ciphers |= IWINFO_CIPHER_CCMP;
-		if (tkip)
-			enc->pair_ciphers |= IWINFO_CIPHER_TKIP;
-		if (tkipaes)
-			enc->pair_ciphers |= IWINFO_CIPHER_TKIP & IWINFO_CIPHER_CCMP;
-
-		enc->group_ciphers = enc->pair_ciphers;
-	}
-
-	ret = 0;
-end:
-	fclose(fp);
-	return ret;
+	return -1;
 }
 
 int mtk_get_phyname(const char *ifname, char *buf)
@@ -744,8 +715,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		entry.signal = pe->AvgRssi1;
 		entry.signal_avg = pe->AvgRssi1;
 		entry.noise = pe->AvgRssi0 - 16;
-		entry.inactive = pe->ConnectedTime;
-//		entry.connected_time = pe->InactiveTime;
+		entry.inactive = pe->InactiveTime;
+		entry.connected_time = pe->ConnectedTime;
 
 		entry.rx_packets = pe->RxPackets;
 		entry.tx_packets = pe->TxPackets;

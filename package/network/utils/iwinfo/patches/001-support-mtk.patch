@@ -1,0 +1,277 @@
+--- a/api/wext.h
++++ b/api/wext.h
+@@ -458,6 +458,7 @@ /* Modes of operation */
+ #define IW_MODE_REPEAT	4	/* Wireless Repeater (forwarder) */
+ #define IW_MODE_SECOND	5	/* Secondary master/repeater (backup) */
+ #define IW_MODE_MONITOR	6	/* Passive monitor (listen only) */
++//#define IW_MODE_MESH	7	/* Mesh (IEEE 802.11s) network */
+ 
+ /* Statistics flags (bitmask in updated) */
+ #define IW_QUAL_QUAL_UPDATED	0x01	/* Value was updated since last read */
+--- a/Makefile
++++ b/Makefile
+@@ -39,6 +39,15 @@ ifneq ($(filter nl80211,$(IWINFO_BACKEND
+ 	IWINFO_LIB_OBJ     += iwinfo_nl80211.o
+ endif
+ 
++ifneq ($(filter mtk,$(IWINFO_BACKENDS)),)
++   IWINFO_CFLAGS  += -DUSE_MTK
++   IWINFO_LIB_OBJ += iwinfo_mtk.o iwinfo_mtk_rate.o
++endif
++
++ifneq ($(filter mt7915,$(IWINFO_BACKENDS)),)
++   IWINFO_CFLAGS  += -DUSE_MTK -DUSE_MT7915
++   IWINFO_LIB_OBJ += iwinfo_mtk.o iwinfo_mtk_rate.o
++endif
+ 
+ compile: clean $(IWINFO_LIB) $(IWINFO_LUA) $(IWINFO_CLI)
+ 
+--- a/include/iwinfo/lua.h
++++ b/include/iwinfo/lua.h
+@@ -37,6 +37,10 @@
+ #define IWINFO_MADWIFI_META	"iwinfo.madwifi"
+ #endif
+ 
++#ifdef USE_MTK
++#define IWINFO_MTK_META     "iwinfo.mtk"
++#endif
++
+ #ifdef USE_NL80211
+ #define IWINFO_NL80211_META	"iwinfo.nl80211"
+ #endif
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -412,6 +412,7 @@ extern const struct iwinfo_ops wext_ops;
+ extern const struct iwinfo_ops madwifi_ops;
+ extern const struct iwinfo_ops nl80211_ops;
+ extern const struct iwinfo_ops wl_ops;
++extern const struct iwinfo_ops mtk_ops;
+ 
+ #include "iwinfo/utils.h"
+ 
+--- a/iwinfo_lib.c
++++ b/iwinfo_lib.c
+@@ -388,6 +388,9 @@ static const struct iwinfo_ops *backends
+ #ifdef USE_MADWIFI
+ 	&madwifi_ops,
+ #endif
++#ifdef USE_MTK
++	&mtk_ops,
++#endif
+ #ifdef USE_WL
+ 	&wl_ops,
+ #endif
+--- a/iwinfo_lua.c
++++ b/iwinfo_lua.c
+@@ -686,6 +686,35 @@ static int iwinfo_L_countrylist(lua_Stat
+ 	return 1;
+ }
+ 
++#ifdef USE_MTK
++/* MTK */
++LUA_WRAP_INT_OP(mtk,channel)
++LUA_WRAP_INT_OP(mtk,frequency)
++LUA_WRAP_INT_OP(mtk,frequency_offset)
++LUA_WRAP_INT_OP(mtk,txpower)
++LUA_WRAP_INT_OP(mtk,txpower_offset)
++LUA_WRAP_INT_OP(mtk,bitrate)
++LUA_WRAP_INT_OP(mtk,signal)
++LUA_WRAP_INT_OP(mtk,noise)
++LUA_WRAP_INT_OP(mtk,quality)
++LUA_WRAP_INT_OP(mtk,quality_max)
++LUA_WRAP_STRING_OP(mtk,ssid)
++LUA_WRAP_STRING_OP(mtk,bssid)
++LUA_WRAP_STRING_OP(mtk,country)
++LUA_WRAP_STRING_OP(mtk,hardware_name)
++LUA_WRAP_STRING_OP(mtk,phyname)
++LUA_WRAP_STRUCT_OP(mtk,mode)
++LUA_WRAP_STRUCT_OP(mtk,assoclist)
++LUA_WRAP_STRUCT_OP(mtk,txpwrlist)
++LUA_WRAP_STRUCT_OP(mtk,scanlist)
++LUA_WRAP_STRUCT_OP(mtk,freqlist)
++LUA_WRAP_STRUCT_OP(mtk,countrylist)
++LUA_WRAP_STRUCT_OP(mtk,hwmodelist)
++LUA_WRAP_STRUCT_OP(mtk,htmodelist)
++LUA_WRAP_STRUCT_OP(mtk,encryption)
++LUA_WRAP_STRUCT_OP(mtk,mbssid_support)
++LUA_WRAP_STRUCT_OP(mtk,hardware_id)
++#endif
+ 
+ #ifdef USE_WL
+ /* Broadcom */
+@@ -906,6 +935,40 @@ static const luaL_reg
+ };
+ #endif
+ 
++#ifdef USE_MTK
++/* MTK table */
++static const luaL_reg R_mtk[] = {
++	LUA_REG(mtk,channel),
++	LUA_REG(mtk,frequency),
++	LUA_REG(mtk,frequency_offset),
++	LUA_REG(mtk,txpower),
++	LUA_REG(mtk,txpower_offset),
++	LUA_REG(mtk,bitrate),
++	LUA_REG(mtk,signal),
++	LUA_REG(mtk,noise),
++	LUA_REG(mtk,quality),
++	LUA_REG(mtk,quality_max),
++	LUA_REG(mtk,mode),
++	LUA_REG(mtk,ssid),
++	LUA_REG(mtk,bssid),
++	LUA_REG(mtk,country),
++	LUA_REG(mtk,assoclist),
++	LUA_REG(mtk,txpwrlist),
++	LUA_REG(mtk,scanlist),
++	LUA_REG(mtk,freqlist),
++	LUA_REG(mtk,countrylist),
++	LUA_REG(mtk,hwmodelist),
++	LUA_REG(mtk,htmodelist),
++	LUA_REG(mtk,encryption),
++	LUA_REG(mtk,mbssid_support),
++	LUA_REG(mtk,hardware_id),
++	LUA_REG(mtk,hardware_name),
++	LUA_REG(mtk,phyname),
++	{ NULL, NULL }
++};
++
++#endif
++
+ /* Wext table */
+ #ifdef USE_WEXT
+ static const luaL_reg R_wext[] = {
+@@ -950,6 +1013,15 @@ static const luaL_reg R_common[] = {
+ LUALIB_API int luaopen_iwinfo(lua_State *L) {
+ 	luaL_register(L, IWINFO_META, R_common);
+ 
++#ifdef USE_MTK
++	luaL_newmetatable(L, IWINFO_MTK_META);
++	luaL_register(L, NULL, R_common);
++	luaL_register(L, NULL, R_mtk);
++	lua_pushvalue(L, -1);
++	lua_setfield(L, -2, "__index");
++	lua_setfield(L, -2, "mtk");
++#endif
++
+ #ifdef USE_WL
+ 	luaL_newmetatable(L, IWINFO_WL_META);
+ 	luaL_register(L, NULL, R_common);
+--- a/iwinfo_wext.c
++++ b/iwinfo_wext.c
+@@ -185,19 +185,19 @@ static int wext_get_channel(const
+ 	return -1;
+ }
+ 
+-static int wext_get_center_chan1(const char *ifname, int *buf)
++int wext_get_center_chan1(const char *ifname, int *buf)
+ {
+ 	/* Not Supported */
+ 	return -1;
+ }
+ 
+-static int wext_get_center_chan2(const char *ifname, int *buf)
++int wext_get_center_chan2(const char *ifname, int *buf)
+ {
+ 	/* Not Supported */
+ 	return -1;
+ }
+ 
+-static int wext_get_frequency(const char *ifname, int *buf)
++int wext_get_frequency(const char *ifname, int *buf)
+ {
+ 	struct iwreq wrq;
+ 	struct iw_range range;
+@@ -294,7 +294,7 @@ static int wext_get_noise(const char *if
+ 	return -1;
+ }
+ 
+-static int wext_get_quality(const char *ifname, int *buf)
++int wext_get_quality(const char *ifname, int *buf)
+ {
+ 	struct iwreq wrq;
+ 	struct iw_statistics stats;
+@@ -312,7 +312,7 @@ static int wext_get_quality(const char *
+ 	return -1;
+ }
+ 
+-static int wext_get_quality_max(const char *ifname, int *buf)
++int wext_get_quality_max(const char *ifname, int *buf)
+ {
+ 	struct iwreq wrq;
+ 	struct iw_range range;
+@@ -377,7 +377,7 @@ static int wext_get_txpwrlist(const char
+ 	return -1;
+ }
+ 
+-static int wext_get_freqlist(const char *ifname, char *buf, int *len)
++int wext_get_freqlist(const char *ifname, char *buf, int *len)
+ {
+ 	struct iwreq wrq;
+ 	struct iw_range range;
+@@ -421,7 +421,7 @@ static int wext_get_countrylist(const ch
+ 	return -1;
+ }
+ 
+-static int wext_get_hwmodelist(const char *ifname, int *buf)
++int wext_get_hwmodelist(const char *ifname, int *buf)
+ {
+ 	char chans[IWINFO_BUFSIZE] = { 0 };
+ 	struct iwinfo_freqlist_entry *e = NULL;
+--- a/iwinfo_utils.c
++++ b/iwinfo_utils.c
+@@ -324,6 +324,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+ {
+ 	FILE *mtd;
+ 	uint16_t *bc;
++	uint16_t ident;
+ 
+ 	int fd, off;
+ 	unsigned int len;
+@@ -336,7 +337,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+ 	{
+ 		if (fscanf(mtd, "mtd%d: %x %*x %127s", &off, &len, buf) < 3 ||
+ 		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"") &&
+-		     strcmp(buf, "\"factory\"")))
++		     strcmp(buf, "\"factory\"") && strcmp(buf, "\"Factory\"")))
+ 		{
+ 			off = -1;
+ 			continue;
+@@ -355,6 +356,38 @@ int iwinfo_hardware_id_from_mtd(struct i
+ 	if ((fd = open(buf, O_RDONLY)) < 0)
+ 		return -1;
+ 
++	if (read(fd, &ident, sizeof(ident)) != -1)
++	{
++		if (ident == 0x7615 || ident == 0x7915
++			|| ident == 0x1576 || ident == 0x1579)
++		{
++			uint16_t ident_zone2 = 0;
++			if (len > 0xa0002 && 
++				lseek(fd, 0xa0000, SEEK_SET) != -1 &&
++				read(fd, &ident_zone2, sizeof(ident_zone2)) != -1)
++			{
++				if (ident_zone2 != 0xFFFF && ident_zone2 != 0x0) {
++					close(fd);
++					return -1;
++				}
++			}
++			if ((ident & 0xff) == 0x76 || (ident & 0xff) == 0x79)
++				id->device_id = (ident >> 8) | (ident & 0x00ff) << 8;
++			else
++				id->device_id = ident;
++			id->vendor_id = 0x14c3;
++			id->subsystem_vendor_id = 0x14c3;
++			id->subsystem_device_id = id->device_id;
++			close(fd);
++			return 0;
++		} else if (ident == 0xffff || ident == 0x0) {
++			/* eeprom invalid */
++			close(fd);
++			return -1;
++		}
++	}
++	lseek(fd, 0, SEEK_SET);
++
+ 	bc = mmap(NULL, len, PROT_READ, MAP_PRIVATE|MAP_LOCKED, fd, 0);
+ 
+ 	if ((void *)bc != MAP_FAILED)
