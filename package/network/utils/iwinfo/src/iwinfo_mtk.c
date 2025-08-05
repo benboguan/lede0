@@ -353,27 +353,8 @@ int mtk_get_frequency(const char *ifname, int *buf)
 
 int mtk_get_txpower(const char *ifname, int *buf)
 {
-	//*buf = 20;
-	//return 0;
-	struct iwreq wrq;
-
-	wrq.u.txpower.flags = 0;
-
-	if (mtk_ioctl(ifname, SIOCGIWTXPOW, &wrq) >= 0)
-	{
-		if(wrq.u.txpower.flags & IW_TXPOW_MWATT)
-			*buf = iwinfo_mw2dbm(wrq.u.txpower.value);
-		else
-			*buf = wrq.u.txpower.value;
-
-		return 0;
-	}
-	else
-	{
-		*buf = 25;
-	}
-
-	return -1;
+	*buf = 20;
+	return 0;
 }
 
 int mtk_get_bitrate(const char *ifname, int *buf)
@@ -457,14 +438,25 @@ int mtk_get_quality(const char *ifname, int *buf)
 
 	if (!mtk_get_signal(ifname, &signal))
 	{
-		if (signal >= -50)
-			*buf = 100;
-		else if (signal >= -80 && signal < -50)
-			*buf = (24 + ((signal + 80) * 26) / 10);
-		else if (signal >= -90 && signal < -80)
-			*buf = (((signal + 90) * 26) / 10);
+		/* A positive signal level is usually just a quality
+		 * value, pass through as-is */
+		if (signal >= 0)
+		{
+			*buf = signal;
+		}
+
+		/* The mtk wext compat layer assumes a signal range
+		 * of -127 dBm to -27 dBm, the quality value is derived
+		 * by adding fix 127 to the mtk signal level */
 		else
-			*buf = 0;
+		{
+			if (signal < -127)
+				signal = -127;
+			else if (signal > -27)
+				signal = -27;
+
+			*buf = (signal + 127);
+		}
 
 		return 0;
 	}
@@ -694,9 +686,9 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		entry.signal = pe->AvgRssi1;
 		entry.signal_avg = pe->AvgRssi1;
-		entry.noise = pe->AvgRssi0 - 16;
-		entry.inactive = pe->InactiveTime;
-		entry.connected_time = pe->ConnectedTime;
+		entry.noise = pe->AvgRssi0 - 19;
+		entry.inactive = pe->ConnectedTime;
+//		entry.connected_time = pe->ConnectedTime;
 
 		entry.rx_packets = pe->RxPackets;
 		entry.tx_packets = pe->TxPackets;
@@ -823,6 +815,8 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	char site_rssi[5];
 	char site_signal[9];
 	int ssid_len;
+	struct iwinfo_scanlist_ht_chan_entry *ht_chan_info = &e->ht_chan_info;
+	//struct iwinfo_scanlist_vht_chan_entry *vht_chan_info = &e->vht_chan_info;
 
 	sp += 4; // skip No
 	memcpy(site_channel, sp, 4);
@@ -839,6 +833,7 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	rtrim(site_signal);
 
 	e->channel = atoi(site_channel);
+	ht_chan_info->primary_chan = e->channel;
 	bssid2mac((char *)site_bssid, (unsigned char *)e->mac);
 	/* Mode */
 	e->mode = IWINFO_OPMODE_MASTER;
@@ -860,11 +855,6 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	e->quality_max = 100;
 
 	ssid_len = rtrim(site_ssid);
-//	if (!strlen(site_ssid))
-//	{
-//		strcpy(site_ssid, "*hidden*");
-//		len = 8;
-//	}
 	memcpy(e->ssid, site_ssid, ssid_len);
 }
 
@@ -1136,7 +1126,7 @@ int mtk_get_hardware_name(const char *ifname, char *buf)
 	const struct iwinfo_hardware_entry *hw;
 
 	if (!(hw = mtk_get_hardware_entry(ifname)))
-		sprintf(buf, "%s", "MediaTek");
+		sprintf(buf, "%s", "MediaTek MT7615E");
 	else
 		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
 
