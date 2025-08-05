@@ -246,7 +246,7 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_add $label_mac 1)
 		;;
 	raisecom,msg1500-x-00)
-		lan_mac=$(mtd_get_mac_binary factory 0xe000)
+		lan_mac=$(mtd_get_mac_binary Factory 0x4)
 		wan_mac=$(macaddr_add "$lan_mac" +3)
 		label_mac=$lan_mac
 		;;
