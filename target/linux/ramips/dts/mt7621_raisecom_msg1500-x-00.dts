@@ -13,6 +13,7 @@
 		led-boot = &led_usb;
 		led-failsafe = &led_usb;
 		led-upgrade = &led_usb;
+		label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -118,7 +119,12 @@
 	};
 };
 
+&gmac0 {
+	mtd-mac-address = <&factory 0xe000>;
+};
+
 &gmac1 {
+	mtd-mac-address = <&factory 0xe006>;
 	status = "okay";
 };
 

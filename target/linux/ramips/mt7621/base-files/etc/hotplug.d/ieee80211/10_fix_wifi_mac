@@ -64,10 +64,4 @@ case "$board" in
 			macaddr_setbit_la "$(macaddr_add $hw_mac_addr 0x100000)" > /sys${DEVPATH}/macaddress
 		fi
 		;;
-	raisecom,msg1500-x-00)
-		if [ "$PHYNBR" = "0" ]; then
-			base_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 0x4)" 1)
-			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
-		fi
-		;;
 esac
