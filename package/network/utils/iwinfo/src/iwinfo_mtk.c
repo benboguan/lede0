@@ -812,7 +812,6 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	char site_ssid[33];
 	char site_bssid[20];
 	char site_security[23];
-	char site_rssi[5];
 	char site_signal[9];
 	int ssid_len;
 	struct iwinfo_scanlist_ht_chan_entry *ht_chan_info = &e->ht_chan_info;
@@ -823,13 +822,11 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	memcpy(site_ssid, sp + 4, 33);
 	memcpy(site_bssid, sp + 37, 20);
 	memcpy(site_security, sp + 57, 23);
-	memcpy(site_rssi, sp + 80, 5);
-	memcpy(site_signal, sp + 85, 9);
+	memcpy(site_signal, sp + 80, 9);
 
 	rtrim(site_bssid);
 	rtrim(site_channel);
 	rtrim(site_security);
-	rtrim(site_rssi);
 	rtrim(site_signal);
 
 	e->channel = atoi(site_channel);
@@ -841,14 +838,13 @@ static void fill_find_entry(char *sp, struct iwinfo_scanlist_entry *e)
 	parse_security((char *)site_security, &e->crypto);
 
 	int quality = atoi(site_signal);
-	int rssi = atoi(site_rssi);
-	/*int8_t rssi;
+	int8_t rssi;
 	rssi = (quality * 127 / 100) - 127;
 
 	if (quality < 1)
 	{
 		rssi = -127;
-	}*/
+	}
 
 	e->signal = rssi;
 	e->quality = quality;

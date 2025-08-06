@@ -5410,7 +5410,7 @@ VOID RTMPCommSiteSurveyData(IN RTMP_STRING *msg, IN BSS_ENTRY *pBss,
 	else /* < -84 dbm*/
 		Rssi_Quality = 0;
 
-	sprintf(msg + strlen(msg), "%-5d", Rssi + 0x100);
+	sprintf(msg + strlen(msg), "%-5d", Rssi);
 
 	sprintf(msg + strlen(msg), "%-9d", Rssi_Quality);
 	/* Wireless Mode*/

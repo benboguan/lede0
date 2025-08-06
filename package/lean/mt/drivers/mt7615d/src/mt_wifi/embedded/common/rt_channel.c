@@ -1778,7 +1778,7 @@ CH_DESP Country_US_ChDesp[] = {
 
 	{ 1, 11, 30, BOTH, FALSE }, /*2402~2472MHz, Ch 1~11,   Max BW: 40 */
 	{ 36, 4, 30, IDOR, FALSE }, /*5170~5250MHz, Ch 36~48, Max BW: 40 */
-	{ 52, 4, 30, BOTH, FALSE }, /*5250~5330MHz, Ch 52~64, Max BW: 40 */
+	{ 52, 4, 24, BOTH, TRUE }, /*5250~5330MHz, Ch 52~64, Max BW: 40 */
 	{ 100, 5, 24, BOTH, TRUE }, /*5490~5600MHz, Ch 100~116, Max BW: 40 */
 	{ 132, 4, 24, BOTH, TRUE }, /*5650~5710MHz, Ch 132~140, Max BW: 40 */
 	{ 149, 5, 30, BOTH, FALSE }, /*5735~5835MHz, Ch 149~165, Max BW: 40 */

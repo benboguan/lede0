@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 			strcat(e2p_name, "MT7615_E2PImage1_iPAiLNA");
 			strcat(e2p_name2, "MT7615_E2PImage2_iPAiLNA");
 			strcat(e2p_name3, "MT7615_E2PImage3_iPAiLNA");
-			strcat(ine2pname, "iPAiLNA/MT7615_EEPROM1.bin");
+			strcat(ine2pname, "iPAiLNA/MT7615_EEPROM.bin");
 			strcat(ine2pname2, "iPAiLNA/MT7615_EEPROM2.bin");
 			strcat(ine2pname3, "iPAiLNA/MT7615_EEPROM3.bin");
 			strcat(oute2pname, "mt7615_e2p_iPAiLNA.h");
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 			strcat(e2p_name, "MT7615_E2PImage1_iPAeLNA");
 			strcat(e2p_name2, "MT7615_E2PImage2_iPAeLNA");
 			strcat(e2p_name3, "MT7615_E2PImage3_iPAeLNA");
-			strcat(ine2pname, "iPAeLNA/MT7615_EEPROM1.bin");
+			strcat(ine2pname, "iPAeLNA/MT7615_EEPROM.bin");
 			strcat(ine2pname2, "iPAeLNA/MT7615_EEPROM2.bin");
 			strcat(ine2pname3, "iPAeLNA/MT7615_EEPROM3.bin");
 			strcat(oute2pname, rt28xxdir);
@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
 			strcat(e2p_name, "MT7615_E2PImage1_ePAeLNA");
 			strcat(e2p_name2, "MT7615_E2PImage2_ePAeLNA");
 			strcat(e2p_name3, "MT7615_E2PImage3_ePAeLNA");
-			strcat(ine2pname, "ePAeLNA/MT7615_EEPROM1.bin");
+			strcat(ine2pname, "ePAeLNA/MT7615_EEPROM.bin");
 			strcat(ine2pname2, "ePAeLNA/MT7615_EEPROM2.bin");
 			strcat(ine2pname3, "ePAeLNA/MT7615_EEPROM3.bin");
 			strcat(oute2pname, rt28xxdir);
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
 			strcat(e2p_name, "MT7615_E2PImage1_ePAiLNA");
 			strcat(e2p_name2, "MT7615_E2PImage2_ePAiLNA");
 			strcat(e2p_name3, "MT7615_E2PImage3_ePAiLNA");
-			strcat(ine2pname, "ePAiLNA/MT7615_EEPROM1.bin");
+			strcat(ine2pname, "ePAiLNA/MT7615_EEPROM.bin");
 			strcat(ine2pname2, "ePAiLNA/MT7615_EEPROM2.bin");
 			strcat(ine2pname3, "ePAiLNA/MT7615_EEPROM3.bin");
 			strcat(oute2pname, rt28xxdir);

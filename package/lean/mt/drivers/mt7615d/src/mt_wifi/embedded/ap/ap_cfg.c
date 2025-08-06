@@ -6668,22 +6668,8 @@ INT RTMPAPQueryInformation(IN RTMP_ADAPTER *pAd,
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
 			 ("Query::OID_802_11_AUTHENTICATION_MODE\n"));
 		wrq->u.data.length = sizeof(NDIS_802_11_AUTHENTICATION_MODE);
-#ifdef APCLI_SUPPORT
-		if (pObj->ioctl_if_type == INT_APCLI) {
-			AuthMode = SecAuthModeNewToOld(
-				pAd->ApCfg.ApCliTab[pObj->ioctl_if].wdev.SecConfig.AKMMap);
-		}
-#endif /* APCLI_SUPPORT */
-#ifdef WDS_SUPPORT
-		else if (pObj->ioctl_if_type == INT_WDS) {
-			AuthMode = SecAuthModeNewToOld(
-				pAd->WdsTab.WdsEntry[pObj->ioctl_if].wdev.SecConfig.AKMMap);
-		}
-#endif /* WDS_SUPPORT */
-		else {
-			AuthMode = SecAuthModeNewToOld(
-				pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.SecConfig.AKMMap);
-		}
+		AuthMode = SecAuthModeNewToOld(
+			pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.SecConfig.AKMMap);
 		Status = copy_to_user(wrq->u.data.pointer, &AuthMode,
 				      wrq->u.data.length);
 		break;
